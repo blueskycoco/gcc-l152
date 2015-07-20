@@ -152,7 +152,7 @@ SECTIONS
     . = ALIGN(4);
   } >RAM
 
-  
+  __cs3_heap_end = .; /* for _sbrk */
 
   
 

@@ -3,7 +3,7 @@
 #include <unistd.h>
 extern void uart_wait_rcv();
 extern int uart_read();
-//extern int uart_send(unsigned char byte);
+extern int uart_send(unsigned char byte);
 int _close(int file) {
   return 0;
 }
@@ -29,7 +29,7 @@ int _read(int file, char *ptr, int len) {
   int todo,ch;
   if(len == 0)
     return 0;
-  uart_wait_rcv();
+ // uart_wait_rcv();
   *ptr++ = uart_read();
   for(todo = 1; todo < len; todo++) {
   	ch=uart_read();
@@ -55,10 +55,6 @@ caddr_t _sbrk(int incr) {
   heap_end += incr;
   return (caddr_t) prev_heap_end;
 }
-void uart_send(char tmp)
-{
-	return;
-}
 int _write(int file, char *ptr, int len) {
   int todo;
   for (todo = 0; todo < len; todo++) {
@@ -70,7 +66,7 @@ int fputc(int ch, FILE *f)
 {
 	uart_send(ch);
 	return ch;
-}
+}/*
 int put_char(char *buf)
 {
 	char ch=0,i=0;
@@ -82,4 +78,4 @@ int put_char(char *buf)
 		uart_send(ch&(unsigned short)0x01ff);
 	}
 	return ch;
-}
+}*/

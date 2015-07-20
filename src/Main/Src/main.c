@@ -40,7 +40,18 @@ static void SystemClock_Config(void);
 static void GetPointerData(uint8_t *pbuf);
 /* Private functions ---------------------------------------------------------*/
 
+UART_HandleTypeDef UartHandle;
 
+int uart_send(unsigned char data)
+{
+	return HAL_UART_Transmit(&UartHandle,(uint8_t *)&data,1,100);
+}
+int uart_read()
+{
+	char data;
+	HAL_UART_Receive(&UartHandle,(uint8_t *)&data,1,100);
+	return data;
+}
 /**
   * @brief  Main program
   * @param  None
@@ -48,47 +59,59 @@ static void GetPointerData(uint8_t *pbuf);
   */
 int main(void)
 {
-  uint8_t HID_Buffer[4];
-   
-  /* STM32L1xx HAL library initialization:
-       - Configure the Flash prefetch
-       - Systick timer is configured by default as source of time base, but user 
-         can eventually implement his proper time base source (a general purpose 
-         timer for example or other time source), keeping in mind that Time base 
-         duration should be kept 1ms since PPP_TIMEOUT_VALUEs are defined and 
-         handled in milliseconds basis.
-       - Set NVIC Group Priority to 4
-       - Low Level Initialization
-     */
-  HAL_Init();
+	uint8_t HID_Buffer[4];
 
-  /* Initialize LED2 */
-  BSP_LED_Init(LED2);
-  
-  /* Configure the system clock to 32 MHz */
-  SystemClock_Config();
+	/* STM32L1xx HAL library initialization:
+	- Configure the Flash prefetch
+	- Systick timer is configured by default as source of time base, but user 
+	can eventually implement his proper time base source (a general purpose 
+	timer for example or other time source), keeping in mind that Time base 
+	duration should be kept 1ms since PPP_TIMEOUT_VALUEs are defined and 
+	handled in milliseconds basis.
+	- Set NVIC Group Priority to 4
+	- Low Level Initialization
+	*/
 
-  /* Configure Key button for remote wakeup */
-  BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI);
+	HAL_Init();
+	/* Initialize LED2 */
+	BSP_LED_Init(LED2);
 
-  /* Init Device Library */
-  USBD_Init(&USBD_Device, &HID_Desc, 0);
+	/* Configure the system clock to 32 MHz */
+	SystemClock_Config();
+	UartHandle.Instance		 = USARTx;
 
-  /* Register the HID class */
-  USBD_RegisterClass(&USBD_Device, USBD_HID_CLASS);
+	UartHandle.Init.BaudRate   = 115200;
+	UartHandle.Init.WordLength = UART_WORDLENGTH_8B;
+	UartHandle.Init.StopBits   = UART_STOPBITS_1;
+	UartHandle.Init.Parity	   = UART_PARITY_NONE;
+	UartHandle.Init.HwFlowCtl  = UART_HWCONTROL_NONE;
+	UartHandle.Init.Mode	   = UART_MODE_TX_RX;
+	HAL_UART_DeInit(&UartHandle);
+	HAL_UART_Init(&UartHandle);
 
-  /* Start Device Process */
-  USBD_Start(&USBD_Device);
+	printf("in main\n");
 
-  while (1)
-  {
-    /* Insert delay 100 ms */
-    HAL_Delay(100);  
-    BSP_LED_Toggle(LED2);
-    HAL_Delay(100);  
-    GetPointerData(HID_Buffer);
-    USBD_HID_SendReport(&USBD_Device, HID_Buffer, 4);
-  }
+	/* Configure Key button for remote wakeup */
+	BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI);
+
+	/* Init Device Library */
+	USBD_Init(&USBD_Device, &HID_Desc, 0);
+
+	/* Register the HID class */
+	USBD_RegisterClass(&USBD_Device, USBD_HID_CLASS);
+
+	/* Start Device Process */
+	USBD_Start(&USBD_Device);
+
+	while (1)
+	{
+		/* Insert delay 100 ms */
+		HAL_Delay(100);  
+		BSP_LED_Toggle(LED2);
+		HAL_Delay(100);  
+		GetPointerData(HID_Buffer);
+		USBD_HID_SendReport(&USBD_Device, HID_Buffer, 4);
+	}
 }
 
 /**

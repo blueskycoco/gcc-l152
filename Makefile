@@ -76,6 +76,7 @@ ${COMPILER}/net.axf: ${COMPILER}/main.o
 ${COMPILER}/net.axf: ${COMPILER}/stm32l1xx_it.o
 ${COMPILER}/net.axf: ${COMPILER}/usbd_conf.o
 ${COMPILER}/net.axf: ${COMPILER}/usbd_desc.o
+${COMPILER}/net.axf: ${COMPILER}/stm32l1xx_hal_msp.o
 ${COMPILER}/net.axf: ${COMPILER}/stm32l1xx_nucleo.o
 ${COMPILER}/net.axf: ${COMPILER}/system_stm32l1xx.o
 ${COMPILER}/net.axf: ${COMPILER}/stm32l1xx_hal.o
@@ -87,6 +88,7 @@ ${COMPILER}/net.axf: ${COMPILER}/stm32l1xx_hal_pwr.o
 ${COMPILER}/net.axf: ${COMPILER}/stm32l1xx_hal_pwr_ex.o
 ${COMPILER}/net.axf: ${COMPILER}/stm32l1xx_hal_rcc.o
 ${COMPILER}/net.axf: ${COMPILER}/stm32l1xx_hal_rcc_ex.o
+${COMPILER}/net.axf: ${COMPILER}/stm32l1xx_hal_uart.o
 ${COMPILER}/net.axf: ${COMPILER}/usbd_hid.o
 ${COMPILER}/net.axf: ${COMPILER}/usbd_core.o
 ${COMPILER}/net.axf: ${COMPILER}/usbd_ctlreq.o

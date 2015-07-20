@@ -32,8 +32,6 @@
 //
 //*****************************************************************************
 void ResetISR(void);
-static void NmiSR(void);
-static void FaultISR(void);
 static void IntDefaultHandler(void);
 
 //*****************************************************************************
@@ -218,44 +216,6 @@ ResetISR(void)
 	SystemInit();
 	//__libc_init_array();
 	main();
-}
-
-//*****************************************************************************
-//
-// This is the code that gets called when the processor receives a NMI.  This
-// simply enters an infinite loop, preserving the system state for examination
-// by a debugger.
-//
-//*****************************************************************************
-	static void
-NmiSR(void)
-{
-	//
-	// Enter an infinite loop.
-	//
-	put_char("NmiSR\n");
-	while(1)
-	{
-	}
-}
-
-//*****************************************************************************
-//
-// This is the code that gets called when the processor receives a fault
-// interrupt.  This simply enters an infinite loop, preserving the system state
-// for examination by a debugger.
-//
-//*****************************************************************************
-	static void
-FaultISR(void)
-{
-	//
-	// Enter an infinite loop.
-	//
-	put_char("FaultISR\n");
-	while(1)
-	{
-	}
 }
 
 //*****************************************************************************
