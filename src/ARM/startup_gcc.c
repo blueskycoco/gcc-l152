@@ -41,14 +41,18 @@ static void IntDefaultHandler(void);
 // External declaration for the interrupt handler used by the application.
 //
 //*****************************************************************************
-extern void USART1_IRQHandler(void);
-extern void button_irq();
+extern void NMI_Handler(void);
+extern void HardFault_Handler();
 extern void MemManage_Handler(void);
 extern void BusFault_Handler(void);
 extern void UsageFault_Handler(void);
+extern void SVC_Handler(void);
 extern void DebugMon_Handler(void);
+extern void PendSV_Handler(void);
 extern void SysTick_Handler(void);
-extern void EXTI2_IRQHandler(void) ;
+extern void USB_LP_IRQHandler(void);
+extern void USB_FS_WKUP_IRQHandler(void);
+extern void EXTI15_10_IRQHandler(void);
 //*****************************************************************************
 //
 // The entry point for the application.
@@ -75,20 +79,20 @@ void (* const g_pfnVectors[])(void) =
   (void (*)(void))((uint32_t)pui32Stack + sizeof(pui32Stack)),
    // The initial stack pointer
   ResetISR,
-  NmiSR,
-  FaultISR,
-  IntDefaultHandler,//MemManage_Handler,
-  IntDefaultHandler,//BusFault_Handler,
-  IntDefaultHandler,//UsageFault_Handler,
+  NMI_Handler,
+  HardFault_Handler,
+  MemManage_Handler,//MemManage_Handler,
+  BusFault_Handler,//BusFault_Handler,
+  UsageFault_Handler,//UsageFault_Handler,
   0,
   0,
   0,
   0,
-  IntDefaultHandler,//SVC_Handler,
-  IntDefaultHandler,//DebugMon_Handler,
+  SVC_Handler,//SVC_Handler,
+  DebugMon_Handler,//DebugMon_Handler,
   0,
-  IntDefaultHandler,//PendSV_Handler,
-  IntDefaultHandler,//SysTick_Handler,
+  PendSV_Handler,//PendSV_Handler,
+  SysTick_Handler,//SysTick_Handler,
   IntDefaultHandler,//WWDG_IRQHandler,
   IntDefaultHandler,//PVD_IRQHandler,
   IntDefaultHandler,//TAMPER_STAMP_IRQHandler,
@@ -109,7 +113,7 @@ void (* const g_pfnVectors[])(void) =
   IntDefaultHandler,//DMA1_Channel7_IRQHandler,
   IntDefaultHandler,//ADC1_IRQHandler,
   IntDefaultHandler,//USB_HP_IRQHandler,
-  IntDefaultHandler,//USB_LP_IRQHandler,
+  USB_LP_IRQHandler,//USB_LP_IRQHandler,
   IntDefaultHandler,//DAC_IRQHandler,
   IntDefaultHandler,//COMP_IRQHandler,
   IntDefaultHandler,//EXTI9_5_IRQHandler,
@@ -129,9 +133,9 @@ void (* const g_pfnVectors[])(void) =
   IntDefaultHandler,//USART1_IRQHandler,
   IntDefaultHandler,//USART2_IRQHandler,
   IntDefaultHandler,//USART3_IRQHandler,
-  IntDefaultHandler,//EXTI15_10_IRQHandler,
+  EXTI15_10_IRQHandler,//EXTI15_10_IRQHandler,
   IntDefaultHandler,//RTC_Alarm_IRQHandler,
-  IntDefaultHandler,//USB_FS_WKUP_IRQHandler,
+  USB_FS_WKUP_IRQHandler,//USB_FS_WKUP_IRQHandler,
   IntDefaultHandler,//TIM6_IRQHandler,
   IntDefaultHandler,//TIM7_IRQHandler,
   0,
