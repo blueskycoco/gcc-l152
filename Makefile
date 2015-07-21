@@ -59,7 +59,8 @@ all: ${COMPILER}/net.axf
 clean:
 	@rm -rf ${COMPILER} ${wildcard *~}
 install:
-	openocd -f openocd.cfg -c "flash_image"
+#	openocd -f openocd.cfg -c "flash_image"
+	jlink.exe burn.txt
 
 #
 # The rule to create the target directory.

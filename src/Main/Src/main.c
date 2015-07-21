@@ -88,7 +88,7 @@ int main(void)
 	UartHandle.Init.Mode	   = UART_MODE_TX_RX;
 	HAL_UART_DeInit(&UartHandle);
 	HAL_UART_Init(&UartHandle);
-
+	SWO_Enable();
 	printf("in main\n");
 
 	/* Configure Key button for remote wakeup */
@@ -111,6 +111,7 @@ int main(void)
 		HAL_Delay(100);  
 		GetPointerData(HID_Buffer);
 		USBD_HID_SendReport(&USBD_Device, HID_Buffer, 4);
+		printf("loop ...\n");
 	}
 }
 

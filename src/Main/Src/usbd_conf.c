@@ -257,7 +257,7 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
   hpcd.Init.ep0_mps = PCD_EP0MPS_64;
   hpcd.Init.phy_itface = PCD_PHY_EMBEDDED;
   hpcd.Init.speed = PCD_SPEED_FULL;
-  hpcd.Init.low_power_enable = 1;
+  hpcd.Init.low_power_enable = 0;
   /* Link The driver to the stack */
   hpcd.pData = pdev;
   pdev->pData = &hpcd;
