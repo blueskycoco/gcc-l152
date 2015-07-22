@@ -3,6 +3,7 @@
 #define EXT_ID 0xbf25
 #define SECTOR_SIZE 64*1024
 #define N_SECTORS 64
+#define TOTAL_SIZE N_SECTORS*SECTOR_SIZE
 #define PAGE_SIZE 256
 
 
@@ -170,88 +171,7 @@ int flash_write_reg(unsigned char reg,unsigned char *out,int len)
 	HAL_GPIO_WritePin(SPIx_NSS_GPIO_PORT,SPIx_NSS_PIN, GPIO_PIN_SET);
 	return result;
 }
-void flash_write(int op_code,int addr,int len,int *ret,unsigned char *buf)
-{	
-	unsigned char send_buf[6];
-	int send_len=0;
-	int result=-1;
-	if(op_code==SPINOR_OP_BP)//byte program
-	{
-		send_len=5;
-	}
-	else
-	{
-		send_len=6;
-		send_buf[5]=buf[1];
-	}
-	send_buf[0]=op_code;
-	send_buf[1]=(addr & 0xFFFFFF) >> 16);
-	send_buf[2]=(addr & 0xFFFF) >> 8);
-	send_buf[3]=(addr & 0xFF);
-	send_buf[4]=buf[0];
-	HAL_GPIO_WritePin(SPIx_NSS_GPIO_PORT,SPIx_NSS_PIN, GPIO_PIN_RESET);
-	result=HAL_SPI_Transmit(&SpiHandle,(uint8_t *)send_buf,send_len,5000);
-	HAL_GPIO_WritePin(SPIx_NSS_GPIO_PORT,SPIx_NSS_PIN, GPIO_PIN_SET);
-	if(result==HAL_OK)
-		*ret=len;
-	else
-		*ret=0;
-}
-int flash_read(int addr,int len,int *ret,unsigned char *buf)
-{
-	int result=-1;
-	unsigned char send_buf[5];
-	
-	send_buf[0]=SPINOR_OP_READ_FAST;
-	send_buf[1]=(addr & 0xFFFFFF) >> 16);
-	send_buf[2]=(addr & 0xFFFF) >> 8);
-	send_buf[3]=(addr & 0xFF);
-	send_buf[4]=0xff;
-	HAL_GPIO_WritePin(SPIx_NSS_GPIO_PORT,SPIx_NSS_PIN, GPIO_PIN_RESET);
-	if(HAL_SPI_Transmit(&SpiHandle,(uint8_t *)send_buf,5,5000)==HAL_OK)
-		result=HAL_SPI_Receive(&SpiHandle,(uint8_t *)buf,len,5000);
-	HAL_GPIO_WritePin(SPIx_NSS_GPIO_PORT,SPIx_NSS_PIN, GPIO_PIN_SET);
-	if(result==HAL_OK)
-		*ret=len;
-	else
-		*ret=0;
-	return result;
-
-}
-int spi_nor_read_id()
-{
-	int			tmp;
-	unsigned char			id[5];
-	unsigned long			jedec;
-	unsigned short                     ext_jedec;
-	config_spi();
-
-	tmp = flash_read_reg(SPINOR_OP_RDID, id, 5);
-	if (tmp != HAL_OK) {
-		printf(" error %d reading JEDEC ID\n", tmp);
-		return 0;
-	}
-	printf("ID %x %x %x %x %x\n",id[0],id[1],id[2],id[3],id[4]);
-	jedec = id[0];
-	jedec = jedec << 8;
-	jedec |= id[1];
-	jedec = jedec << 8;
-	jedec |= id[2];
-
-	ext_jedec = id[3] << 8 | id[4];
-
-	if (JEDEC_ID == jedec) 
-	{
-		if (EXT_ID == ext_jedec)
-		{
-			printf("Flash ID:%x ext_id %x found\n",jedec,ext_jedec);
-			return jedec;
-		}
-	}
-	printf("unrecognized JEDEC id %06x ext id %x\n", jedec,ext_jedec);
-	return 0;
-}
-#define	MAX_READY_WAIT_JIFFIES	(40 * HZ)
+#define	MAX_READY_WAIT_JIFFIES	(40 * 100)
 /*
  * Read the status register, returning its value in the location
  * Return the status register value.
@@ -281,7 +201,7 @@ static inline int write_enable()
 /*
  * Send write disble instruction to the chip.
  */
-static inline int write_disable(struct spi_nor *nor)
+static inline int write_disable()
 {
 	return flash_write_reg(SPINOR_OP_WRDI, NULL, 0);
 }
@@ -306,11 +226,123 @@ static int wait_till_ready()
 	return 1;
 }
 
-static int spi_nor_write(int to, int len,
+void flash_write(int op_code,int addr,int len,int *ret,const unsigned char *buf)
+{	
+	unsigned char send_buf[6];
+	int send_len=0;
+	int result=-1;
+	if(op_code==SPINOR_OP_BP)//byte program
+	{
+		send_len=5;
+	}
+	else
+	{
+		send_len=6;
+		send_buf[5]=buf[1];
+	}
+	send_buf[0]=op_code;
+	send_buf[1]=((addr & 0xFFFFFF) >> 16);
+	send_buf[2]=((addr & 0xFFFF) >> 8);
+	send_buf[3]=(addr & 0xFF);
+	send_buf[4]=buf[0];
+	HAL_GPIO_WritePin(SPIx_NSS_GPIO_PORT,SPIx_NSS_PIN, GPIO_PIN_RESET);
+	result=HAL_SPI_Transmit(&SpiHandle,(uint8_t *)send_buf,send_len,5000);
+	HAL_GPIO_WritePin(SPIx_NSS_GPIO_PORT,SPIx_NSS_PIN, GPIO_PIN_SET);
+	if(result==HAL_OK)
+		*ret=len;
+	else
+		*ret=0;
+}
+int flash_read(int addr,int len,int *ret,unsigned char *buf)
+{
+	int result=-1;
+	unsigned char send_buf[5];
+	
+	send_buf[0]=SPINOR_OP_READ_FAST;
+	send_buf[1]=((addr & 0xFFFFFF) >> 16);
+	send_buf[2]=((addr & 0xFFFF) >> 8);
+	send_buf[3]=(addr & 0xFF);
+	send_buf[4]=0xff;
+	HAL_GPIO_WritePin(SPIx_NSS_GPIO_PORT,SPIx_NSS_PIN, GPIO_PIN_RESET);
+	if(HAL_SPI_Transmit(&SpiHandle,(uint8_t *)send_buf,5,5000)==HAL_OK)
+		result=HAL_SPI_Receive(&SpiHandle,(uint8_t *)buf,len,5000);
+	HAL_GPIO_WritePin(SPIx_NSS_GPIO_PORT,SPIx_NSS_PIN, GPIO_PIN_SET);
+	if(result==HAL_OK)
+		*ret=len;
+	else
+		*ret=0;
+	return result;
+
+}
+int flash_erase_chip()
+{
+	int ret;
+	ret = wait_till_ready();
+	if (ret)
+		return ret;
+	write_enable();
+	return flash_write_reg(SPINOR_OP_CHIP_ERASE, NULL, 0);
+}
+int flash_erase(int addr)
+{
+	unsigned char send_buf[4];
+	int result=-1;
+	
+	int ret;
+	ret = wait_till_ready();
+	if (ret)
+		return ret;
+	write_enable();
+	send_buf[0]=SPINOR_OP_BE_4K;
+	send_buf[1]=((addr & 0xFFFFFF) >> 16);
+	send_buf[2]=((addr & 0xFFFF) >> 8);
+	send_buf[3]=(addr & 0xFF);
+	HAL_GPIO_WritePin(SPIx_NSS_GPIO_PORT,SPIx_NSS_PIN, GPIO_PIN_RESET);
+	result=HAL_SPI_Transmit(&SpiHandle,(uint8_t *)send_buf,4,5000);
+	HAL_GPIO_WritePin(SPIx_NSS_GPIO_PORT,SPIx_NSS_PIN, GPIO_PIN_SET);
+	return result;
+}
+
+int spi_nor_read_id()
+{
+	int			tmp;
+	unsigned char			id[5];
+	unsigned long			jedec;
+	unsigned short                     ext_jedec;
+	config_spi();
+
+	tmp = flash_read_reg(SPINOR_OP_RDID, id, 5);
+	if (tmp != HAL_OK) {
+		printf(" error %d reading JEDEC ID\n", tmp);
+		return 0;
+	}
+	printf("ID %x %x %x %x %x\n",id[0],id[1],id[2],id[3],id[4]);
+	jedec = id[0];
+	jedec = jedec << 8;
+	jedec |= id[1];
+	jedec = jedec << 8;
+	jedec |= id[2];
+
+	ext_jedec = id[3] << 8 | id[4];
+
+	if (JEDEC_ID == jedec) 
+	{
+		if (EXT_ID == ext_jedec)
+		{
+			printf("Flash ID:%x ext_id %x found\n",(unsigned int)jedec,ext_jedec);
+			return jedec;
+		}
+	}
+	printf("unrecognized JEDEC id %06x ext id %x\n", (unsigned int)jedec,ext_jedec);
+	return 0;
+}
+
+
+int spi_nor_write(int to, int len,
 		int *retlen, const unsigned char *buf)
 {
 	int actual;
-	int ret,sst_write_second=0;
+	int ret;//,sst_write_second=0;
 	unsigned char	program_opcode;
 	
 	printf("to 0x%08x, len %zd\n", to, len);
@@ -345,9 +377,9 @@ static int spi_nor_write(int to, int len,
 		if (ret)
 			goto time_out;
 		to += 2;
-		sst_write_second = true;
+		//sst_write_second = 1;
 	}
-	sst_write_second = false;
+	//sst_write_second = 0;
 
 	write_disable();
 	ret = wait_till_ready();
@@ -369,13 +401,12 @@ static int spi_nor_write(int to, int len,
 time_out:
 	return ret;
 }
-static int spi_nor_read(int from, int len,
+int spi_nor_read(int from, int len,
 			int *retlen, unsigned char *buf)
 {
 	int ret;
 
 	printf("from 0x%08x, len %zd\n", from, len);
-
 	ret = flash_read(from, len, retlen, buf);
 	return ret;
 }
@@ -383,31 +414,17 @@ static int spi_nor_read(int from, int len,
  * Erase an address range on the nor chip.  The address range may extend
  * one or more erase sectors.  Return an error is there is a problem erasing.
  */
-static int spi_nor_erase(struct mtd_info *mtd, struct erase_info *instr)
+int spi_nor_erase(int addr ,int len)
 {
-	struct spi_nor *nor = mtd_to_spi_nor(mtd);
-	u32 addr, len;
-	uint32_t rem;
-	int ret;
-
-	dev_dbg(nor->dev, "at 0x%llx, len %lld\n", (long long)instr->addr,
-			(long long)instr->len);
-
-	div_u64_rem(instr->len, mtd->erasesize, &rem);
-	if (rem)
-		return -EINVAL;
-
-	addr = instr->addr;
-	len = instr->len;
-
-	ret = spi_nor_lock_and_prep(nor, SPI_NOR_OPS_ERASE);
-	if (ret)
-		return ret;
+	int ret=0;
+	int erasesize=4096;
+	printf("at 0x%llx, len %lld\n", (long long)addr,
+			(long long)len);
 
 	/* whole-chip erase? */
-	if (len == mtd->size) {
-		if (erase_chip(nor)) {
-			ret = -EIO;
+	if (len == TOTAL_SIZE) {
+		if (flash_erase_chip()) {
+			ret = -1;
 			goto erase_err;
 		}
 
@@ -419,26 +436,16 @@ static int spi_nor_erase(struct mtd_info *mtd, struct erase_info *instr)
 	/* "sector"-at-a-time erase */
 	} else {
 		while (len) {
-			if (nor->erase(nor, addr)) {
-				ret = -EIO;
+			if (flash_erase(addr)) {
+				ret = -1;
 				goto erase_err;
 			}
 
-			addr += mtd->erasesize;
-			len -= mtd->erasesize;
+			addr += erasesize;
+			len -= erasesize;
 		}
 	}
-
-	spi_nor_unlock_and_unprep(nor, SPI_NOR_OPS_ERASE);
-
-	instr->state = MTD_ERASE_DONE;
-	mtd_erase_callback(instr);
-
-	return ret;
-
 erase_err:
-	spi_nor_unlock_and_unprep(nor, SPI_NOR_OPS_ERASE);
-	instr->state = MTD_ERASE_FAILED;
 	return ret;
 }
 

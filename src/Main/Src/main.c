@@ -41,7 +41,13 @@ static void GetPointerData(uint8_t *pbuf);
 /* Private functions ---------------------------------------------------------*/
 
 UART_HandleTypeDef UartHandle;
-
+extern int spi_nor_erase(int addr ,int len);
+extern int spi_nor_read(int from, int len,
+			int *retlen, unsigned char *buf);
+extern int spi_nor_write(int to, int len,
+		int *retlen, const unsigned char *buf);
+extern int spi_nor_read_id();
+extern void SWO_Enable( void );
 int uart_send(unsigned char data)
 {
 	return HAL_UART_Transmit(&UartHandle,(uint8_t *)&data,1,100);
@@ -59,8 +65,8 @@ int uart_read()
   */
 int main(void)
 {
-	uint8_t HID_Buffer[4];
-	int id;
+	uint8_t HID_Buffer[256],HID_Buffer1[256];
+	int id,ret;
 	/* STM32L1xx HAL library initialization:
 	- Configure the Flash prefetch
 	- Systick timer is configured by default as source of time base, but user 
@@ -103,7 +109,17 @@ int main(void)
 	/* Start Device Process */
 	USBD_Start(&USBD_Device);
 	id=spi_nor_read_id();
-
+	spi_nor_erase(0,64*64*1024);
+	for(id=0;id<255;id++)
+		HID_Buffer[id]=id;
+	memset(HID_Buffer1,0,255);
+	spi_nor_write(0,255,&ret,HID_Buffer);
+	printf("ret write %d\n",ret);
+	spi_nor_read(0,255,&ret,HID_Buffer1);
+	printf("ret read %d\n",ret);
+	for(id=0;id<255;id++)
+		printf("%d ",HID_Buffer1[id]);
+	printf("\n");
 	while (1)
 	{
 		/* Insert delay 100 ms */
