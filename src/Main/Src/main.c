@@ -60,7 +60,7 @@ int uart_read()
 int main(void)
 {
 	uint8_t HID_Buffer[4];
-
+	int id;
 	/* STM32L1xx HAL library initialization:
 	- Configure the Flash prefetch
 	- Systick timer is configured by default as source of time base, but user 
@@ -102,6 +102,7 @@ int main(void)
 
 	/* Start Device Process */
 	USBD_Start(&USBD_Device);
+	id=spi_nor_read_id();
 
 	while (1)
 	{
@@ -111,7 +112,8 @@ int main(void)
 		HAL_Delay(100);  
 		GetPointerData(HID_Buffer);
 		USBD_HID_SendReport(&USBD_Device, HID_Buffer, 4);
-		printf("loop ...\n");
+		id=spi_nor_read_id();
+		printf("loop ...%x\n",id);
 	}
 }
 

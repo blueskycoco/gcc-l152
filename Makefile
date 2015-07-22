@@ -90,10 +90,13 @@ ${COMPILER}/net.axf: ${COMPILER}/stm32l1xx_hal_pwr_ex.o
 ${COMPILER}/net.axf: ${COMPILER}/stm32l1xx_hal_rcc.o
 ${COMPILER}/net.axf: ${COMPILER}/stm32l1xx_hal_rcc_ex.o
 ${COMPILER}/net.axf: ${COMPILER}/stm32l1xx_hal_uart.o
+${COMPILER}/net.axf: ${COMPILER}/stm32l1xx_hal_spi.o
+${COMPILER}/net.axf: ${COMPILER}/stm32l1xx_hal_spi_ex.o
 ${COMPILER}/net.axf: ${COMPILER}/usbd_hid.o
 ${COMPILER}/net.axf: ${COMPILER}/usbd_core.o
 ${COMPILER}/net.axf: ${COMPILER}/usbd_ctlreq.o
 ${COMPILER}/net.axf: ${COMPILER}/usbd_ioreq.o
+${COMPILER}/net.axf: ${COMPILER}/spiflash.o
 ${COMPILER}/net.axf: stm32l1xx_flash.ld
 SCATTERgcc_net=stm32l1xx_flash.ld
 ENTRY_net=ResetISR
