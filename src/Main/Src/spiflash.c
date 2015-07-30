@@ -94,6 +94,10 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi)
     GPIO_InitStruct.Pin = SPIx_MOSI_PIN;
     GPIO_InitStruct.Alternate = SPIx_MOSI_AF;
     HAL_GPIO_Init(SPIx_MOSI_GPIO_PORT, &GPIO_InitStruct);
+    /* SPI MOSI GPIO pin configuration  */
+    //GPIO_InitStruct.Pin = SPIx_NSS_PIN;
+    //GPIO_InitStruct.Alternate = SPIx_NSS_AF;
+    //HAL_GPIO_Init(SPIx_NSS_GPIO_PORT, &GPIO_InitStruct);
 
 	GPIO_InitStruct.Pin    = SPIx_NSS_PIN;
 	GPIO_InitStruct.Mode   = GPIO_MODE_OUTPUT_PP;
@@ -125,7 +129,7 @@ int config_spi()
 {
 	SpiHandle.Instance				 = SPIx;
 	
-	  SpiHandle.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
+	  SpiHandle.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_2;
 	  SpiHandle.Init.Direction		   = SPI_DIRECTION_2LINES;
 	  SpiHandle.Init.CLKPhase		   = SPI_PHASE_1EDGE;
 	  SpiHandle.Init.CLKPolarity	   = SPI_POLARITY_LOW;
@@ -133,7 +137,7 @@ int config_spi()
 	  SpiHandle.Init.CRCPolynomial	   = 7;
 	  SpiHandle.Init.DataSize		   = SPI_DATASIZE_8BIT;
 	  SpiHandle.Init.FirstBit		   = SPI_FIRSTBIT_MSB;
-	  SpiHandle.Init.NSS			   = SPI_NSS_SOFT;
+	  SpiHandle.Init.NSS			   = SPI_NSS_HARD_OUTPUT;
 	  SpiHandle.Init.TIMode 		   = SPI_TIMODE_DISABLE;
 	
 	  SpiHandle.Init.Mode = SPI_MODE_MASTER;
@@ -190,6 +194,16 @@ static int read_sr()
 
 	return val;
 }
+
+/*
+ * Write status register 1 byte
+ * Returns negative if error occurred.
+ */
+static inline int write_sr(uint8_t val)
+{
+	return flash_write_reg(SPINOR_OP_WRSR, &val, 1);
+}
+
 /*
  * Set write enable latch with Write Enable command.
  * Returns negative if error occurred.
@@ -220,13 +234,96 @@ static int wait_till_ready()
 		if (sr < 0)
 			break;
 		else if (!(sr & SR_WIP))
+		{
 			return 0;
+		}
 	} while (HAL_GetTick()<deadline);
 
 	return 1;
 }
+static int spi_nor_lock(int ofs, int len)
+{
+	uint32_t offset = ofs;
+	uint8_t status_old, status_new;
+	int ret = 0;
 
-void flash_write(int op_code,int addr,int len,int *ret,const unsigned char *buf)
+	/* Wait until finished previous command */
+	ret = wait_till_ready();
+	if (ret)
+		goto err;
+
+	status_old = read_sr();
+
+	if (offset < TOTAL_SIZE - (TOTAL_SIZE / 2))
+		status_new = status_old | SR_BP2 | SR_BP1 | SR_BP0;
+	else if (offset < TOTAL_SIZE - (TOTAL_SIZE / 4))
+		status_new = (status_old & ~SR_BP0) | SR_BP2 | SR_BP1;
+	else if (offset < TOTAL_SIZE - (TOTAL_SIZE / 8))
+		status_new = (status_old & ~SR_BP1) | SR_BP2 | SR_BP0;
+	else if (offset < TOTAL_SIZE - (TOTAL_SIZE / 16))
+		status_new = (status_old & ~(SR_BP0 | SR_BP1)) | SR_BP2;
+	else if (offset < TOTAL_SIZE - (TOTAL_SIZE / 32))
+		status_new = (status_old & ~SR_BP2) | SR_BP1 | SR_BP0;
+	else if (offset < TOTAL_SIZE - (TOTAL_SIZE / 64))
+		status_new = (status_old & ~(SR_BP2 | SR_BP0)) | SR_BP1;
+	else
+		status_new = (status_old & ~(SR_BP2 | SR_BP1)) | SR_BP0;
+
+	/* Only modify protection if it will not unlock other areas */
+	if ((status_new & (SR_BP2 | SR_BP1 | SR_BP0)) >
+				(status_old & (SR_BP2 | SR_BP1 | SR_BP0))) {
+		write_enable();
+		ret = write_sr(status_new);
+		if (ret)
+			goto err;
+	}
+
+err:
+	return ret;
+}
+
+static int spi_nor_unlock(int ofs, uint len)
+{
+	uint32_t offset = ofs;
+	uint8_t status_old, status_new;
+	int ret = 0;
+
+	/* Wait until finished previous command */
+	ret = wait_till_ready();
+	if (ret)
+		goto err;
+
+	status_old = read_sr();
+
+	if (offset+len > TOTAL_SIZE - (TOTAL_SIZE / 64))
+		status_new = status_old & ~(SR_BP2 | SR_BP1 | SR_BP0);
+	else if (offset+len > TOTAL_SIZE - (TOTAL_SIZE / 32))
+		status_new = (status_old & ~(SR_BP2 | SR_BP1)) | SR_BP0;
+	else if (offset+len > TOTAL_SIZE - (TOTAL_SIZE / 16))
+		status_new = (status_old & ~(SR_BP2 | SR_BP0)) | SR_BP1;
+	else if (offset+len > TOTAL_SIZE - (TOTAL_SIZE / 8))
+		status_new = (status_old & ~SR_BP2) | SR_BP1 | SR_BP0;
+	else if (offset+len > TOTAL_SIZE - (TOTAL_SIZE / 4))
+		status_new = (status_old & ~(SR_BP0 | SR_BP1)) | SR_BP2;
+	else if (offset+len > TOTAL_SIZE - (TOTAL_SIZE / 2))
+		status_new = (status_old & ~SR_BP1) | SR_BP2 | SR_BP0;
+	else
+		status_new = (status_old & ~SR_BP0) | SR_BP2 | SR_BP1;
+
+	/* Only modify protection if it will not lock other areas */
+	if ((status_new & (SR_BP2 | SR_BP1 | SR_BP0)) <
+				(status_old & (SR_BP2 | SR_BP1 | SR_BP0))) {
+		write_enable();
+		ret = write_sr(status_new);
+		if (ret)
+			goto err;
+	}
+
+err:
+	return ret;
+}
+
+int flash_write(int write_second,int op_code,int addr,int len,int *ret,const unsigned char *buf)
 {	
 	unsigned char send_buf[6];
 	int send_len=0;
@@ -237,27 +334,45 @@ void flash_write(int op_code,int addr,int len,int *ret,const unsigned char *buf)
 	}
 	else
 	{
-		send_len=6;
-		send_buf[5]=buf[1];
+		if(write_second)
+		{			
+			send_len=3;
+			send_buf[2]=buf[1];
+		}
+		else
+		{
+			send_len=6;
+			send_buf[5]=buf[1];
+		}
 	}
 	send_buf[0]=op_code;
-	send_buf[1]=((addr & 0xFFFFFF) >> 16);
-	send_buf[2]=((addr & 0xFFFF) >> 8);
-	send_buf[3]=(addr & 0xFF);
-	send_buf[4]=buf[0];
+	if(write_second&&(op_code!=SPINOR_OP_BP))
+	{
+		send_buf[1]=buf[0];
+	}
+	else
+	{	
+		send_buf[1]=((addr & 0xFFFFFF) >> 16);
+		send_buf[2]=((addr & 0xFFFF) >> 8);
+		send_buf[3]=(addr & 0xFF);
+		send_buf[4]=buf[0];
+	}
 	HAL_GPIO_WritePin(SPIx_NSS_GPIO_PORT,SPIx_NSS_PIN, GPIO_PIN_RESET);
 	result=HAL_SPI_Transmit(&SpiHandle,(uint8_t *)send_buf,send_len,5000);
 	HAL_GPIO_WritePin(SPIx_NSS_GPIO_PORT,SPIx_NSS_PIN, GPIO_PIN_SET);
 	if(result==HAL_OK)
 		*ret=len;
 	else
+	{
 		*ret=0;
+		printf("write failed\n");
+	}
+	return result;
 }
 int flash_read(int addr,int len,int *ret,unsigned char *buf)
 {
-	int result=-1;
+	int result=-1,i;
 	unsigned char send_buf[5];
-	
 	send_buf[0]=SPINOR_OP_READ_FAST;
 	send_buf[1]=((addr & 0xFFFFFF) >> 16);
 	send_buf[2]=((addr & 0xFFFF) >> 8);
@@ -268,7 +383,9 @@ int flash_read(int addr,int len,int *ret,unsigned char *buf)
 		result=HAL_SPI_Receive(&SpiHandle,(uint8_t *)buf,len,5000);
 	HAL_GPIO_WritePin(SPIx_NSS_GPIO_PORT,SPIx_NSS_PIN, GPIO_PIN_SET);
 	if(result==HAL_OK)
+	{
 		*ret=len;
+	}
 	else
 		*ret=0;
 	return result;
@@ -309,6 +426,7 @@ int spi_nor_read_id()
 	unsigned char			id[5];
 	unsigned long			jedec;
 	unsigned short                     ext_jedec;
+	int ret;
 	config_spi();
 
 	tmp = flash_read_reg(SPINOR_OP_RDID, id, 5);
@@ -324,11 +442,18 @@ int spi_nor_read_id()
 	jedec |= id[2];
 
 	ext_jedec = id[3] << 8 | id[4];
+	//ret=write_enable();
+	//if(ret!=0)
+	//	return 0;
+	//ret=write_sr(0);
+	//if(ret!=0)
+	//	return 0;
 
 	if (JEDEC_ID == jedec) 
 	{
 		if (EXT_ID == ext_jedec)
 		{
+			
 			printf("Flash ID:%x ext_id %x found\n",(unsigned int)jedec,ext_jedec);
 			return jedec;
 		}
@@ -342,63 +467,72 @@ int spi_nor_write(int to, int len,
 		int *retlen, const unsigned char *buf)
 {
 	int actual;
-	int ret;//,sst_write_second=0;
+	int ret=1,sst_write_second=0;
 	unsigned char	program_opcode;
 	
 	printf("to 0x%08x, len %zd\n", to, len);
-
-	/* Wait until finished previous write command. */
-	ret = wait_till_ready();
-	if (ret)
-		goto time_out;
-
-	write_enable();
-
-	actual = to % 2;
-	/* Start write from odd address. */
-	if (actual) {
-			program_opcode = SPINOR_OP_BP;
-
-		/* write one byte. */
-		flash_write(program_opcode,to, 1, retlen, buf);
+	ret=spi_nor_unlock(to,len);
+	if(!ret)
+	{
+		/* Wait until finished previous write command. */
 		ret = wait_till_ready();
 		if (ret)
 			goto time_out;
-	}
-	to += actual;
 
-	/* Write out most of the data here. */
-	for (; actual < len - 1; actual += 2) {
-		program_opcode = SPINOR_OP_AAI_WP;
-
-		/* write two bytes. */
-		flash_write(program_opcode, to, 2, retlen, buf + actual);
-		ret = wait_till_ready();
-		if (ret)
-			goto time_out;
-		to += 2;
-		//sst_write_second = 1;
-	}
-	//sst_write_second = 0;
-
-	write_disable();
-	ret = wait_till_ready();
-	if (ret)
-		goto time_out;
-
-	/* Write out trailing byte if it exists. */
-	if (actual != len) {
 		write_enable();
+		sst_write_second = 0;
 
-		program_opcode = SPINOR_OP_BP;
-		flash_write(program_opcode, to, 1, retlen, buf + actual);
+		actual = to % 2;
+		/* Start write from odd address. */
+		if (actual) {
+				program_opcode = SPINOR_OP_BP;
 
+			/* write one byte. */
+			ret=flash_write(sst_write_second,program_opcode,to, 1, retlen, buf);
+			if(!ret)
+				ret = wait_till_ready();
+			
+			if (ret)
+				goto time_out;
+		}
+		to += actual;
+
+		/* Write out most of the data here. */
+		for (; actual < len - 1; actual += 2) {
+			program_opcode = SPINOR_OP_AAI_WP;
+
+			/* write two bytes. */
+			ret=flash_write(sst_write_second,program_opcode, to, 2, retlen, buf + actual);
+			if(!ret)
+				ret = wait_till_ready();
+			if (ret)
+				goto time_out;
+			to += 2;
+			sst_write_second = 1;
+		}
+		sst_write_second = 0;
+
+		write_disable();
 		ret = wait_till_ready();
 		if (ret)
 			goto time_out;
-		write_disable();
+
+		/* Write out trailing byte if it exists. */
+		if (actual != len) {
+			write_enable();
+
+			program_opcode = SPINOR_OP_BP;
+			ret=flash_write(sst_write_second,program_opcode, to, 1, retlen, buf + actual);
+			if(!ret)
+				ret = wait_till_ready();
+			if (ret)
+				goto time_out;
+			write_disable();
+		}
 	}
 time_out:
+	if(!ret)
+	spi_nor_lock(to,len);
 	return ret;
 }
 int spi_nor_read(int from, int len,
@@ -406,7 +540,7 @@ int spi_nor_read(int from, int len,
 {
 	int ret;
 
-	printf("from 0x%08x, len %zd\n", from, len);
+	printf("from 0x%08x, len %d\n", from, len);
 	ret = flash_read(from, len, retlen, buf);
 	return ret;
 }
@@ -420,32 +554,37 @@ int spi_nor_erase(int addr ,int len)
 	int erasesize=4096;
 	printf("at 0x%llx, len %lld\n", (long long)addr,
 			(long long)len);
-
-	/* whole-chip erase? */
-	if (len == TOTAL_SIZE) {
-		if (flash_erase_chip()) {
-			ret = -1;
-			goto erase_err;
-		}
-
-	/* REVISIT in some cases we could speed up erasing large regions
-	 * by using SPINOR_OP_SE instead of SPINOR_OP_BE_4K.  We may have set up
-	 * to use "small sector erase", but that's not always optimal.
-	 */
-
-	/* "sector"-at-a-time erase */
-	} else {
-		while (len) {
-			if (flash_erase(addr)) {
+	ret=spi_nor_unlock(addr,len);
+	if(!ret)
+	{
+		/* whole-chip erase? */
+		if (len == TOTAL_SIZE) {
+			if (flash_erase_chip()) {
 				ret = -1;
 				goto erase_err;
 			}
 
-			addr += erasesize;
-			len -= erasesize;
+		/* REVISIT in some cases we could speed up erasing large regions
+		 * by using SPINOR_OP_SE instead of SPINOR_OP_BE_4K.  We may have set up
+		 * to use "small sector erase", but that's not always optimal.
+		 */
+
+		/* "sector"-at-a-time erase */
+		} else {
+			while (len>0) {
+				if (flash_erase(addr)) {
+					ret = -1;
+					goto erase_err;
+				}
+
+				addr += erasesize;
+				len -= erasesize;
+			}
 		}
 	}
 erase_err:
+	if(!ret) 
+		spi_nor_lock(addr,len);
 	return ret;
 }
 

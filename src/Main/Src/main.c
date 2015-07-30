@@ -66,7 +66,7 @@ int uart_read()
 int main(void)
 {
 	uint8_t HID_Buffer[256],HID_Buffer1[256];
-	int id,ret;
+	int id,ret,i,j=0;
 	/* STM32L1xx HAL library initialization:
 	- Configure the Flash prefetch
 	- Systick timer is configured by default as source of time base, but user 
@@ -108,17 +108,55 @@ int main(void)
 
 	/* Start Device Process */
 	USBD_Start(&USBD_Device);
-	id=spi_nor_read_id();
-	spi_nor_erase(0,64*64*1024);
-	for(id=0;id<255;id++)
-		HID_Buffer[id]=id;
-	memset(HID_Buffer1,0,255);
-	spi_nor_write(0,255,&ret,HID_Buffer);
-	printf("ret write %d\n",ret);
+	if((id=spi_nor_read_id())==0)
+		while(1)
+		{
+			printf("read id failed\n");
+			spi_nor_read_id();
+			HAL_Delay(100);
+		}
+	if(spi_nor_erase(0,64*1024*64))
+	{
+		while(1)
+		{
+			printf("spi_nor_erase failed\n");
+			HAL_Delay(100);
+		}
+	}
+	for(i=0;i<256;i++)
+		HID_Buffer[i]=i;
+	memset(HID_Buffer1,0,256);
+	for(i=0;i<4096;i=i+256)
+	{
+		if(spi_nor_write(i,256,&ret,HID_Buffer))
+		{
+			while(1)
+			{
+				printf("spi_nor_write failed\n");
+				HAL_Delay(100);  
+			}
+		}
+	}
+	
+	while(1)
+	{
+		memset(HID_Buffer1,0x23,256);
+		spi_nor_read(j,256,&ret,HID_Buffer1);
+		//printf("ret read ID %x\n",id);
+		if(j<(4096-256))
+		j+=256;
+		for(i=0;i<256;i++)
+		{
+			if(HID_Buffer1[i]!=i)
+			printf("%x ",HID_Buffer1[i]);
+		}
+		printf("\n");
+		HAL_Delay(1000);
+	}
 	spi_nor_read(0,255,&ret,HID_Buffer1);
 	printf("ret read %d\n",ret);
-	for(id=0;id<255;id++)
-		printf("%d ",HID_Buffer1[id]);
+	for(i=0;i<255;i++)
+		printf("%d ",HID_Buffer1[i]);
 	printf("\n");
 	while (1)
 	{
@@ -128,8 +166,11 @@ int main(void)
 		HAL_Delay(100);  
 		GetPointerData(HID_Buffer);
 		USBD_HID_SendReport(&USBD_Device, HID_Buffer, 4);
-		id=spi_nor_read_id();
-		printf("loop ...%x\n",id);
+		spi_nor_read(0,255,&ret,HID_Buffer1);
+		printf("ret read ID %x\n",id);
+		//for(id=0;id<255;id++)
+		//printf("%d ",HID_Buffer1[id]);
+		//printf("\n");
 	}
 }
 

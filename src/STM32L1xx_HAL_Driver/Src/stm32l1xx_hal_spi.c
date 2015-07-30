@@ -775,7 +775,6 @@ HAL_StatusTypeDef HAL_SPI_TransmitReceive(SPI_HandleTypeDef *hspi, uint8_t *pTxD
           {
             return HAL_TIMEOUT;
           }
-
           (*hspi->pRxBuffPtr++) = hspi->Instance->DR;
           hspi->RxXferCount--;
         }
