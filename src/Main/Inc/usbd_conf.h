@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    USB_Device/HID_Standalone/Inc/usbd_conf.h
+  * @file    USB_Device/CDC_Standalone/Inc/usbd_conf.h
   * @author  MCD Application Team
   * @version V1.3.0
   * @date    3-July-2015
@@ -16,8 +16,8 @@
   *
   *        http://www.st.com/software_license_agreement_liberty_v2
   *
-  * Unless required by applicable law or agreed to in writing, software
-  * distributed under the License is distributed on an "AS IS" BASIS,
+  * Unless required by applicable law or agreed to in writing, software 
+  * distributed under the License is distributed on an "AS IS" BASIS, 
   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   * See the License for the specific language governing permissions and
   * limitations under the License.
@@ -48,20 +48,19 @@
 /* Exported macro ------------------------------------------------------------*/
 /* Memory management macros */
 
-/* For footprint reasons and since only one allocation is handled in the HID class
+/* For footprint reasons and since only one allocation is handled in the CDC class 
    driver, the malloc/free is changed into a static allocation method */
 
 void *USBD_static_malloc(uint32_t size);
 void USBD_static_free(void *p);
 
-#define MAX_STATIC_ALLOC_SIZE     4 /*HID Class Driver Structure size*/
+#define MAX_STATIC_ALLOC_SIZE     140 /*CDC Class Driver Structure size*/
 
 #define USBD_malloc               (uint32_t *)USBD_static_malloc
 #define USBD_free                 USBD_static_free
 #define USBD_memset               /* Not used */
 #define USBD_memcpy               /* Not used */
-
-
+    
 /* DEBUG macros */
 #if (USBD_DEBUG_LEVEL > 0)
 #define  USBD_UsrLog(...)   printf(__VA_ARGS__);\

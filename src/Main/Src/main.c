@@ -37,7 +37,6 @@ USBD_HandleTypeDef USBD_Device;
 
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
-static void GetPointerData(uint8_t *pbuf);
 /* Private functions ---------------------------------------------------------*/
 
 UART_HandleTypeDef UartHandle;
@@ -101,13 +100,24 @@ int main(void)
 	BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI);
 
 	/* Init Device Library */
-	USBD_Init(&USBD_Device, &HID_Desc, 0);
+	//USBD_Init(&USBD_Device, &HID_Desc, 0);
 
 	/* Register the HID class */
-	USBD_RegisterClass(&USBD_Device, USBD_HID_CLASS);
+	//USBD_RegisterClass(&USBD_Device, USBD_HID_CLASS);
 
 	/* Start Device Process */
-	USBD_Start(&USBD_Device);
+	//USBD_Start(&USBD_Device);
+	/* Init Device Library */
+  USBD_Init(&USBD_Device, &VCP_Desc, 0);
+  
+  /* Add Supported Class */
+  USBD_RegisterClass(&USBD_Device, USBD_CDC_CLASS);
+  
+  /* Add CDC Interface Class */
+  USBD_CDC_RegisterInterface(&USBD_Device, &USBD_CDC_fops);
+  
+  /* Start Device Process */
+  USBD_Start(&USBD_Device);
 	if((id=spi_nor_read_id())==0)
 		while(1)
 		{
@@ -144,7 +154,9 @@ int main(void)
 		spi_nor_read(j,256,&ret,HID_Buffer1);
 		//printf("ret read ID %x\n",id);
 		if(j<(4096-256))
-		j+=256;
+			j+=256;
+		else
+			j=0;
 		for(i=0;i<256;i++)
 		{
 			if(HID_Buffer1[i]!=i)
@@ -164,8 +176,8 @@ int main(void)
 		HAL_Delay(100);  
 		BSP_LED_Toggle(LED2);
 		HAL_Delay(100);  
-		GetPointerData(HID_Buffer);
-		USBD_HID_SendReport(&USBD_Device, HID_Buffer, 4);
+	//	GetPointerData(HID_Buffer);
+//		USBD_HID_SendReport(&USBD_Device, HID_Buffer, 4);
 		spi_nor_read(0,255,&ret,HID_Buffer1);
 		printf("ret read ID %x\n",id);
 		//for(id=0;id<255;id++)
@@ -174,30 +186,6 @@ int main(void)
 	}
 }
 
-/**
-  * @brief  Gets Pointer Data.
-  * @param  pbuf: Pointer to report
-  * @retval None
-  */
-static void GetPointerData(uint8_t *pbuf)
-{
-  static int8_t cnt = 0;
-  int8_t  x = 0, y = 0 ;
-  
-  if(cnt++ > 0)
-  {
-    x = CURSOR_STEP;
-  }
-  else
-  {
-    x = -CURSOR_STEP;
-  }
-  
-  pbuf[0] = 0;
-  pbuf[1] = x;
-  pbuf[2] = y;
-  pbuf[3] = 0;
-}
 
 /**
   * @brief  System Clock Configuration
@@ -243,6 +231,14 @@ static void SystemClock_Config(void)
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
   HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1);
+}
+void Error_Handler(void)
+{
+  /* Turn LED3 on */
+  BSP_LED_On(1);
+  while (1)
+  {
+  }
 }
 
 #ifdef  USE_FULL_ASSERT

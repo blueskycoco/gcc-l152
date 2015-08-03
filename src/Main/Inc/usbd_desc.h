@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    USB_Device/HID_Standalone/Inc/usbd_desc.h
+  * @file    USB_Device/CDC_Standalone/Inc/usbd_desc.h
   * @author  MCD Application Team
   * @version V1.3.0
   * @date    3-July-2015
@@ -16,8 +16,8 @@
   *
   *        http://www.st.com/software_license_agreement_liberty_v2
   *
-  * Unless required by applicable law or agreed to in writing, software
-  * distributed under the License is distributed on an "AS IS" BASIS,
+  * Unless required by applicable law or agreed to in writing, software 
+  * distributed under the License is distributed on an "AS IS" BASIS, 
   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   * See the License for the specific language governing permissions and
   * limitations under the License.
@@ -38,11 +38,12 @@
 #define         DEVICE_ID2          (0x1FF80054)
 #define         DEVICE_ID3          (0x1FF80064)
 
-#define  USB_SIZ_STRING_SERIAL               0x1A
+#define  USB_SIZ_STRING_SERIAL       0x1A
+
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
-extern USBD_DescriptorsTypeDef HID_Desc;
+extern USBD_DescriptorsTypeDef VCP_Desc;
 
 #endif /* __USBD_DESC_H */
-
+ 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -51,6 +51,11 @@ extern void SysTick_Handler(void);
 extern void USB_LP_IRQHandler(void);
 extern void USB_FS_WKUP_IRQHandler(void);
 extern void EXTI15_10_IRQHandler(void);
+extern void DMA1_Channel4_IRQHandler(void);
+extern void DMA1_Channel5_IRQHandler(void);
+extern void TIM3_IRQHandler(void);
+extern void USART1_IRQHandler(void);
+
 //*****************************************************************************
 //
 // The entry point for the application.
@@ -105,7 +110,7 @@ void (* const g_pfnVectors[])(void) =
   IntDefaultHandler,//DMA1_Channel1_IRQHandler,
   IntDefaultHandler,//DMA1_Channel2_IRQHandler,
   IntDefaultHandler,//DMA1_Channel3_IRQHandler,
-  IntDefaultHandler,//DMA1_Channel4_IRQHandler,
+  DMA1_Channel4_IRQHandler,//DMA1_Channel4_IRQHandler,
   IntDefaultHandler,//DMA1_Channel5_IRQHandler,
   IntDefaultHandler,//DMA1_Channel6_IRQHandler,
   IntDefaultHandler,//DMA1_Channel7_IRQHandler,
@@ -120,7 +125,7 @@ void (* const g_pfnVectors[])(void) =
   IntDefaultHandler,//TIM10_IRQHandler,
   IntDefaultHandler,//TIM11_IRQHandler,
   IntDefaultHandler,//TIM2_IRQHandler,
-  IntDefaultHandler,//TIM3_IRQHandler,
+  TIM3_IRQHandler,//TIM3_IRQHandler,
   IntDefaultHandler,//TIM4_IRQHandler,
   IntDefaultHandler,//I2C1_EV_IRQHandler,
   IntDefaultHandler,//I2C1_ER_IRQHandler,
@@ -128,12 +133,12 @@ void (* const g_pfnVectors[])(void) =
   IntDefaultHandler,//I2C2_ER_IRQHandler,
   IntDefaultHandler,//SPI1_IRQHandler,
   IntDefaultHandler,//SPI2_IRQHandler,
-  IntDefaultHandler,//USART1_IRQHandler,
+  USART1_IRQHandler,//USART1_IRQHandler,
   IntDefaultHandler,//USART2_IRQHandler,
   IntDefaultHandler,//USART3_IRQHandler,
-  EXTI15_10_IRQHandler,//EXTI15_10_IRQHandler,
+  IntDefaultHandler,//EXTI15_10_IRQHandler,
   IntDefaultHandler,//RTC_Alarm_IRQHandler,
-  USB_FS_WKUP_IRQHandler,//USB_FS_WKUP_IRQHandler,
+  IntDefaultHandler,//USB_FS_WKUP_IRQHandler,
   IntDefaultHandler,//TIM6_IRQHandler,
   IntDefaultHandler,//TIM7_IRQHandler,
   0,

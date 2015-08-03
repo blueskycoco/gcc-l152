@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    USB_Device/HID_Standalone/Src/usbd_conf.c
+  * @file    USB_Device/CDC_Standalone/Src/usbd_conf.c
   * @author  MCD Application Team
   * @version V1.3.0
   * @date    3-July-2015
@@ -26,17 +26,17 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
+#include "stm32l1xx_hal.h"
 #include "main.h"
+
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 PCD_HandleTypeDef hpcd;
-__IO uint32_t remotewakeupon = 0;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
-static void SystemClockConfig_STOP(void);
 
 /*******************************************************************************
                        PCD BSP Routines
@@ -50,7 +50,7 @@ static void SystemClockConfig_STOP(void);
 void HAL_PCD_MspInit(PCD_HandleTypeDef *hpcd)
 {
   GPIO_InitTypeDef  GPIO_InitStruct;
-
+  
   /* Enable the GPIOA clock */
   __HAL_RCC_GPIOA_CLK_ENABLE();
   
@@ -62,30 +62,16 @@ void HAL_PCD_MspInit(PCD_HandleTypeDef *hpcd)
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
-
+  
   /* Enable USB Clock */
   __HAL_RCC_USB_CLK_ENABLE();
-
+  
   /* Enable SYSCFG Clock */
   __HAL_RCC_SYSCFG_CLK_ENABLE();
-
-  if (hpcd->Init.low_power_enable == 1)
-  {
-    /* Enable EXTI for USB wakeup */
-    __HAL_USB_WAKEUP_EXTI_CLEAR_FLAG();
-    __HAL_USB_WAKEUP_EXTI_ENABLE_RISING_EDGE();
-    __HAL_USB_WAKEUP_EXTI_ENABLE_IT();
-
-    /* USB Wakeup Interrupt */
-    HAL_NVIC_EnableIRQ(USB_FS_WKUP_IRQn);
-
-    /* Enable USB Wake-up interrupt */
-    HAL_NVIC_SetPriority(USB_FS_WKUP_IRQn, 0, 0);
-  }
-
+  
   /* Set USB Interrupt priority */
-  HAL_NVIC_SetPriority(USB_LP_IRQn, 5, 0);
-
+  HAL_NVIC_SetPriority(USB_LP_IRQn, 7, 0);
+  
   /* Enable USB Interrupt */
   HAL_NVIC_EnableIRQ(USB_LP_IRQn);
 }
@@ -99,7 +85,7 @@ void HAL_PCD_MspDeInit(PCD_HandleTypeDef *hpcd)
 {
   /* Disable USB FS Clock */
   __HAL_RCC_USB_CLK_DISABLE();
-
+  
   /* Disable SYSCFG Clock */
   __HAL_RCC_SYSCFG_CLK_DISABLE();
 }
@@ -107,6 +93,7 @@ void HAL_PCD_MspDeInit(PCD_HandleTypeDef *hpcd)
 /*******************************************************************************
                        LL Driver Callbacks (PCD -> USB Device Library)
 *******************************************************************************/
+
 
 /**
   * @brief  SetupStage callback.
@@ -158,6 +145,7 @@ void HAL_PCD_SOFCallback(PCD_HandleTypeDef *hpcd)
 void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
 {
   USBD_LL_SetSpeed(hpcd->pData, USBD_SPEED_FULL);
+
   /* Reset Device */
   USBD_LL_Reset(hpcd->pData);
 }
@@ -169,15 +157,7 @@ void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
   */
 void HAL_PCD_SuspendCallback(PCD_HandleTypeDef *hpcd)
 {
-  /* Inform USB library that core enters in suspend Mode */
   USBD_LL_Suspend(hpcd->pData);
-
-  /*Enter in STOP mode */
-  if (hpcd->Init.low_power_enable)
-  {
-    /* Set SLEEPDEEP bit and SleepOnExit of Cortex System Control Register */
-    SCB->SCR |= (uint32_t)((uint32_t)(SCB_SCR_SLEEPDEEP_Msk | SCB_SCR_SLEEPONEXIT_Msk));
-  }
 }
 
 /**
@@ -187,15 +167,7 @@ void HAL_PCD_SuspendCallback(PCD_HandleTypeDef *hpcd)
   */
 void HAL_PCD_ResumeCallback(PCD_HandleTypeDef *hpcd)
 {
-  if ((hpcd->Init.low_power_enable) && (remotewakeupon == 0))
-  {
-    SystemClockConfig_STOP();
-
-    /* Reset SLEEPDEEP bit of Cortex System Control Register */
-    SCB->SCR &= (uint32_t)~((uint32_t)(SCB_SCR_SLEEPDEEP_Msk | SCB_SCR_SLEEPONEXIT_Msk));
-  }
   USBD_LL_Resume(hpcd->pData);
-  remotewakeupon = 0;
 }
 
 /**
@@ -245,7 +217,8 @@ void HAL_PCD_DisconnectCallback(PCD_HandleTypeDef *hpcd)
 *******************************************************************************/
 
 /**
-  * @brief  Initializes the Low Level portion of the Device driver.
+  * @brief  USBD_LL_Init 
+  *         Initialize the Low Level portion of the Device driver.
   * @param  pdev: Device handle
   * @retval USBD Status
   */
@@ -263,16 +236,19 @@ USBD_StatusTypeDef USBD_LL_Init(USBD_HandleTypeDef *pdev)
   pdev->pData = &hpcd;
   /* Initialize LL Driver */
   HAL_PCD_Init(pdev->pData);
-
-  HAL_PCDEx_PMAConfig(pdev->pData , 0x00 , PCD_SNG_BUF, 0x18);
-  HAL_PCDEx_PMAConfig(pdev->pData , 0x80 , PCD_SNG_BUF, 0x58);
-  HAL_PCDEx_PMAConfig(pdev->pData , 0x81 , PCD_SNG_BUF, 0x100);
-
+  
+  HAL_PCDEx_PMAConfig(pdev->pData , 0x00 , PCD_SNG_BUF, 0x40);
+  HAL_PCDEx_PMAConfig(pdev->pData , 0x80 , PCD_SNG_BUF, 0x80);
+  HAL_PCDEx_PMAConfig(pdev->pData , CDC_IN_EP , PCD_SNG_BUF, 0xC0);  
+  HAL_PCDEx_PMAConfig(pdev->pData , CDC_OUT_EP , PCD_SNG_BUF, 0x110);
+  HAL_PCDEx_PMAConfig(pdev->pData , CDC_CMD_EP , PCD_SNG_BUF, 0x100); 
+  
   return USBD_OK;
 }
 
 /**
-  * @brief  De-Initializes the Low Level portion of the Device driver.
+  * @brief  USBD_LL_DeInit 
+  *         De-Initialize the Low Level portion of the Device driver.
   * @param  pdev: Device handle
   * @retval USBD Status
   */
@@ -283,7 +259,8 @@ USBD_StatusTypeDef USBD_LL_DeInit(USBD_HandleTypeDef *pdev)
 }
 
 /**
-  * @brief  Starts the Low Level portion of the Device driver.
+  * @brief  USBD_LL_Start 
+  *         Start the Low Level portion of the Device driver.
   * @param  pdev: Device handle
   * @retval USBD Status
   */
@@ -294,7 +271,8 @@ USBD_StatusTypeDef USBD_LL_Start(USBD_HandleTypeDef *pdev)
 }
 
 /**
-  * @brief  Stops the Low Level portion of the Device driver.
+  * @brief  USBD_LL_Stop 
+  *         Stop the Low Level portion of the Device driver.
   * @param  pdev: Device handle
   * @retval USBD Status
   */
@@ -305,8 +283,9 @@ USBD_StatusTypeDef USBD_LL_Stop(USBD_HandleTypeDef *pdev)
 }
 
 /**
-  * @brief  Opens an endpoint of the Low Level Driver.
-  * @param  pdev: Device handle
+  * @brief  USBD_LL_OpenEP 
+  *         Open an endpoint of the Low Level Driver.
+  * @param  pdev: device handle
   * @param  ep_addr: Endpoint Number
   * @param  ep_type: Endpoint Type
   * @param  ep_mps: Endpoint Max Packet Size
@@ -326,8 +305,9 @@ USBD_StatusTypeDef USBD_LL_OpenEP(USBD_HandleTypeDef *pdev,
 }
 
 /**
-  * @brief  Closes an endpoint of the Low Level Driver.
-  * @param  pdev: Device handle
+  * @brief  USBD_LL_CloseEP 
+  *         Close an endpoint of the Low Level Driver.
+  * @param  pdev: device handle
   * @param  ep_addr: Endpoint Number
   * @retval USBD Status
   */
@@ -338,7 +318,8 @@ USBD_StatusTypeDef USBD_LL_CloseEP(USBD_HandleTypeDef *pdev, uint8_t ep_addr)
 }
 
 /**
-  * @brief  Flushes an endpoint of the Low Level Driver.
+  * @brief  USBD_LL_FlushEP 
+  *         Flush an endpoint of the Low Level Driver.
   * @param  pdev: Device handle
   * @param  ep_addr: Endpoint Number
   * @retval USBD Status
@@ -350,7 +331,8 @@ USBD_StatusTypeDef USBD_LL_FlushEP(USBD_HandleTypeDef *pdev, uint8_t ep_addr)
 }
 
 /**
-  * @brief  Sets a Stall condition on an endpoint of the Low Level Driver.
+  * @brief  USBD_LL_StallEP 
+  *         Set a Stall condition on an endpoint of the Low Level Driver.
   * @param  pdev: Device handle
   * @param  ep_addr: Endpoint Number
   * @retval USBD Status
@@ -362,7 +344,8 @@ USBD_StatusTypeDef USBD_LL_StallEP(USBD_HandleTypeDef *pdev, uint8_t ep_addr)
 }
 
 /**
-  * @brief  Clears a Stall condition on an endpoint of the Low Level Driver.
+  * @brief  USBD_LL_ClearStallEP 
+  *         Clear a Stall condition on an endpoint of the Low Level Driver.
   * @param  pdev: Device handle
   * @param  ep_addr: Endpoint Number
   * @retval USBD Status
@@ -374,7 +357,8 @@ USBD_StatusTypeDef USBD_LL_ClearStallEP(USBD_HandleTypeDef *pdev, uint8_t ep_add
 }
 
 /**
-  * @brief  Returns Stall condition.
+  * @brief  USBD_LL_IsStallEP 
+  *         Return Stall condition.
   * @param  pdev: Device handle
   * @param  ep_addr: Endpoint Number
   * @retval Stall (1: Yes, 0: No)
@@ -382,7 +366,7 @@ USBD_StatusTypeDef USBD_LL_ClearStallEP(USBD_HandleTypeDef *pdev, uint8_t ep_add
 uint8_t USBD_LL_IsStallEP(USBD_HandleTypeDef *pdev, uint8_t ep_addr)
 {
   PCD_HandleTypeDef *hpcd = pdev->pData;
-
+  
   if ((ep_addr & 0x80) == 0x80)
   {
     return hpcd->IN_ep[ep_addr & 0x7F].is_stall;
@@ -394,7 +378,8 @@ uint8_t USBD_LL_IsStallEP(USBD_HandleTypeDef *pdev, uint8_t ep_addr)
 }
 
 /**
-  * @brief  Assigns a USB address to the device.
+  * @brief  USBD_LL_SetDevAddress 
+  *         Assign an USB address to the device
   * @param  pdev: Device handle
   * @param  ep_addr: Endpoint Number
   * @retval USBD Status
@@ -406,7 +391,8 @@ USBD_StatusTypeDef USBD_LL_SetUSBAddress(USBD_HandleTypeDef *pdev, uint8_t dev_a
 }
 
 /**
-  * @brief  Transmits data over an endpoint.
+  * @brief  USBD_LL_Transmit 
+  *         Transmit data over an endpoint
   * @param  pdev: Device handle
   * @param  ep_addr: Endpoint Number
   * @param  pbuf: Pointer to data to be sent
@@ -423,7 +409,8 @@ USBD_StatusTypeDef USBD_LL_Transmit(USBD_HandleTypeDef *pdev,
 }
 
 /**
-  * @brief  Prepares an endpoint for reception.
+  * @brief  USBD_LL_PrepareReceive 
+  *         prepare an endpoint for reception
   * @param  pdev: Device handle
   * @param  ep_addr: Endpoint Number
   * @param  pbuf: Pointer to data to be received
@@ -478,7 +465,6 @@ void *USBD_static_malloc(uint32_t size)
   */
 void USBD_static_free(void *p)
 {
-
 }
 
 /**
@@ -498,70 +484,6 @@ void HAL_PCDEx_SetConnectionState(PCD_HandleTypeDef *hpcd, uint8_t state)
   {
     /*  DP Pull-Down is Internal */
     __HAL_SYSCFG_USBPULLUP_DISABLE();
-  }
-}
-
-/**
-  * @brief  Configures system clock after wakeup from STOP mode.
-  * @param  None
-  * @retval None
-  */
-static void SystemClockConfig_STOP(void)
-{
-  RCC_ClkInitTypeDef RCC_ClkInitStruct;
-  RCC_OscInitTypeDef RCC_OscInitStruct;
-
-  /* Enable HSI Oscillator and Activate PLL with HSI as source */
-  RCC_OscInitStruct.OscillatorType      = RCC_OSCILLATORTYPE_HSI;
-  RCC_OscInitStruct.HSIState            = RCC_HSI_ON;
-  RCC_OscInitStruct.PLL.PLLState        = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource       = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLMUL          = RCC_PLL_MUL6;
-  RCC_OscInitStruct.PLL.PLLDIV          = RCC_PLL_DIV3;
-  HAL_RCC_OscConfig(&RCC_OscInitStruct);
-
-  /* Select PLL as system clock source and configure the HCLK, PCLK1 and PCLK2 
-  clocks dividers */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_SYSCLK;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1);
-}
-
-
-/**
-  * @brief  GPIO EXTI Callback function
-  *         Handle remote-wakeup through key button
-  * @param  GPIO_Pin
-  * @retval None
-  */
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-  if (GPIO_Pin == USER_BUTTON_PIN)
-  {
-    if ((((USBD_HandleTypeDef *)hpcd.pData)->dev_remote_wakeup == 1) &&
-        (((USBD_HandleTypeDef *)hpcd.pData)->dev_state == USBD_STATE_SUSPENDED))
-    {
-      if ((&hpcd)->Init.low_power_enable)
-      {
-        /* Reset SLEEPDEEP bit of Cortex System Control Register */
-        SCB->SCR &= (uint32_t)~((uint32_t)(SCB_SCR_SLEEPDEEP_Msk | SCB_SCR_SLEEPONEXIT_Msk));
-
-        SystemClockConfig_STOP();
-      }
-
-      /* Activate Remote wakeup */
-      HAL_PCD_ActivateRemoteWakeup((&hpcd));
-
-      /* remote wakeup delay */
-      HAL_Delay(10);
-
-      /* Disable Remote wakeup */
-      HAL_PCD_DeActivateRemoteWakeup((&hpcd));
-
-      /* change remote_wakeup feature to 0*/
-      ((USBD_HandleTypeDef *)hpcd.pData)->dev_remote_wakeup = 0;
-      remotewakeupon = 1;
-    }
   }
 }
 

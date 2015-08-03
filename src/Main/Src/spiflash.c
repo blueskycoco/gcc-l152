@@ -371,7 +371,7 @@ int flash_write(int write_second,int op_code,int addr,int len,int *ret,const uns
 }
 int flash_read(int addr,int len,int *ret,unsigned char *buf)
 {
-	int result=-1,i;
+	int result=-1;
 	unsigned char send_buf[5];
 	send_buf[0]=SPINOR_OP_READ_FAST;
 	send_buf[1]=((addr & 0xFFFFFF) >> 16);
@@ -426,7 +426,7 @@ int spi_nor_read_id()
 	unsigned char			id[5];
 	unsigned long			jedec;
 	unsigned short                     ext_jedec;
-	int ret;
+
 	config_spi();
 
 	tmp = flash_read_reg(SPINOR_OP_RDID, id, 5);

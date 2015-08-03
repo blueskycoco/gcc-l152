@@ -1,6 +1,6 @@
 /**
   ******************************************************************************
-  * @file    USB_Device/HID_Standalone/Src/stm32l1xx_it.c
+  * @file    USB_Device/CDC_Standalone/Src/stm32l1xx_it.c
   * @author  MCD Application Team
   * @version V1.3.0
   * @date    3-July-2015
@@ -26,21 +26,26 @@
   */
 
 /* Includes ------------------------------------------------------------------*/
+#include "main.h"
 #include "stm32l1xx_it.h"
 
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
-#define CURSOR_STEP     5
-
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 extern PCD_HandleTypeDef hpcd;
+
+/* UART handler declared in "usbd_cdc_interface.c" file */
+extern UART_HandleTypeDef UartHandle;
+
+/* TIM handler declared in "usbd_cdc_interface.c" file */
+extern TIM_HandleTypeDef TimHandle;
 
 /* Private function prototypes -----------------------------------------------*/
 /* Private functions ---------------------------------------------------------*/
 
 /******************************************************************************/
-/*            Cortex-M3 Processor Exceptions Handlers                         */
+/*             Cortex-M3 Processor Exceptions Handlers                        */
 /******************************************************************************/
 
 /**
@@ -138,6 +143,7 @@ void PendSV_Handler(void)
   */
 void SysTick_Handler(void)
 {
+  //Toggle_Leds();
   HAL_IncTick();
 }
 
@@ -149,7 +155,7 @@ void SysTick_Handler(void)
 /******************************************************************************/
 
 /**
-  * @brief  This function handles USB Handler.
+  * @brief  This function handles USB-On-The-Go global interrupt request.
   * @param  None
   * @retval None
   */
@@ -159,23 +165,33 @@ void USB_LP_IRQHandler(void)
 }
 
 /**
-  * @brief  This function handles USB WakeUp interrupt request.
+  * @brief  This function handles DMA interrupt request.
   * @param  None
   * @retval None
   */
-void USB_FS_WKUP_IRQHandler(void)
+void USARTx_DMA_TX_IRQHandler(void)
 {
-  __HAL_USB_WAKEUP_EXTI_CLEAR_FLAG();
+  HAL_DMA_IRQHandler(UartHandle.hdmatx);
 }
 
 /**
-  * @brief  This function handles external lines 0 interrupt request.
+  * @brief  This function handles UART interrupt request.  
   * @param  None
   * @retval None
   */
-void EXTI15_10_IRQHandler(void)
+void USARTx_IRQHandler(void)
 {
-  HAL_GPIO_EXTI_IRQHandler(USER_BUTTON_PIN);
+  HAL_UART_IRQHandler(&UartHandle);
+}
+
+/**
+  * @brief  This function handles TIM interrupt request.
+  * @param  None
+  * @retval None
+  */
+void TIMx_IRQHandler(void)
+{
+  HAL_TIM_IRQHandler(&TimHandle);
 }
 
 /**
