@@ -540,7 +540,7 @@ int spi_nor_read(int from, int len,
 {
 	int ret;
 
-	printf("from 0x%08x, len %d\n", from, len);
+	//printf("from 0x%08x, len %d\n", from, len);
 	ret = flash_read(from, len, retlen, buf);
 	return ret;
 }

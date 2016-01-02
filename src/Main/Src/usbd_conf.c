@@ -200,6 +200,8 @@ void HAL_PCD_ISOINIncompleteCallback(PCD_HandleTypeDef *hpcd, uint8_t epnum)
 void HAL_PCD_ConnectCallback(PCD_HandleTypeDef *hpcd)
 {
   USBD_LL_DevConnected(hpcd->pData);
+  
+	printf("in HAL_PCD_ConnectCallback\n");
 }
 
 /**
@@ -210,6 +212,7 @@ void HAL_PCD_ConnectCallback(PCD_HandleTypeDef *hpcd)
 void HAL_PCD_DisconnectCallback(PCD_HandleTypeDef *hpcd)
 {
   USBD_LL_DevDisconnected(hpcd->pData);
+  printf("in HAL_PCD_DisconnectCallback\n");
 }
 
 /*******************************************************************************

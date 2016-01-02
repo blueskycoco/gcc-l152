@@ -34,7 +34,8 @@
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 USBD_HandleTypeDef USBD_Device;
-
+extern uint8_t UserTxBuffer[2048];
+extern uint32_t UserTxBufPtrIn;
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
 /* Private functions ---------------------------------------------------------*/
@@ -134,7 +135,7 @@ int main(void)
 		}
 	}
 	for(i=0;i<256;i++)
-		HID_Buffer[i]=i;
+		HID_Buffer[i]='5';
 	memset(HID_Buffer1,0,256);
 	for(i=0;i<4096;i=i+256)
 	{
@@ -159,11 +160,26 @@ int main(void)
 			j=0;
 		for(i=0;i<256;i++)
 		{
-			if(HID_Buffer1[i]!=i)
+			if(HID_Buffer1[i]!='5')
 			printf("%x ",HID_Buffer1[i]);
+			
 		}
-		printf("\n");
-		HAL_Delay(1000);
+		
+	  /* To avoid buffer overflow */
+	  if(UserTxBufPtrIn+256 > 2048)
+	  {	  
+		memcpy(UserTxBuffer+UserTxBufPtrIn,HID_Buffer1,2048-UserTxBufPtrIn);
+		memcpy(UserTxBuffer,HID_Buffer1+2048-UserTxBufPtrIn,UserTxBufPtrIn+256-2048);
+	    UserTxBufPtrIn = UserTxBufPtrIn+256-2048;
+	  }
+	  else
+	  {
+	  	memcpy(UserTxBuffer+UserTxBufPtrIn,HID_Buffer1,256);
+	  	UserTxBufPtrIn+=256;
+	  }
+		//printf("send bytes");
+     
+		//HAL_Delay(1000);
 	}
 	spi_nor_read(0,255,&ret,HID_Buffer1);
 	printf("ret read %d\n",ret);
@@ -211,11 +227,11 @@ static void SystemClock_Config(void)
   RCC_OscInitTypeDef RCC_OscInitStruct;
 
   /* Enable HSI Oscillator and Activate PLL with HSI as source */
-  RCC_OscInitStruct.OscillatorType      = RCC_OSCILLATORTYPE_HSI;
-  RCC_OscInitStruct.HSIState            = RCC_HSI_ON;
+  RCC_OscInitStruct.OscillatorType      = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState            = RCC_HSE_ON;
   RCC_OscInitStruct.PLL.PLLState        = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource       = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLMUL          = RCC_PLL_MUL6;
+  RCC_OscInitStruct.PLL.PLLSource       = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLMUL          = RCC_PLL_MUL12;
   RCC_OscInitStruct.PLL.PLLDIV          = RCC_PLL_DIV3;
   HAL_RCC_OscConfig(&RCC_OscInitStruct);
 

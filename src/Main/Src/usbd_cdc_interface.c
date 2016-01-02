@@ -295,7 +295,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
   */
 static int8_t CDC_Itf_Receive(uint8_t* Buf, uint32_t *Len)
 {
+	int i=0;
   HAL_UART_Transmit_DMA(&UartHandle, Buf, *Len);
+  for(i=0;i<*Len;i++)
+  	printf("%c",Buf[i]);
   return (USBD_OK);
 }
 
