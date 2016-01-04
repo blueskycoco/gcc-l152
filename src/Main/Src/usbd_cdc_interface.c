@@ -94,6 +94,7 @@ USBD_CDC_ItfTypeDef USBD_CDC_fops =
   */
 static int8_t CDC_Itf_Init(void)
 {
+#if 0
   /*##-1- Configure the UART peripheral ######################################*/
   /* Put the USART peripheral in the Asynchronous mode (UART Mode) */
   /* USART configured as follows:
@@ -123,7 +124,7 @@ static int8_t CDC_Itf_Init(void)
     /* Transfer error in reception process */
     Error_Handler();
   }
-  
+  #endif
   /*##-3- Configure the TIM Base generation  #################################*/
   TIM_Config();
   
@@ -151,11 +152,11 @@ static int8_t CDC_Itf_Init(void)
 static int8_t CDC_Itf_DeInit(void)
 {
   /* DeInitialize the UART peripheral */
-  if(HAL_UART_DeInit(&UartHandle) != HAL_OK)
-  {
+  //if(HAL_UART_DeInit(&UartHandle) != HAL_OK)
+  //{
     /* Initialization Error */
-    Error_Handler();
-  }
+   // Error_Handler();
+  //}
   return (USBD_OK);
 }
 
@@ -199,7 +200,7 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
     LineCoding.datatype   = pbuf[6];
     
     /* Set the new configuration */
-    ComPort_Config();
+    //ComPort_Config();
     break;
 
   case CDC_GET_LINE_CODING:
@@ -253,7 +254,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
     buffptr = UserTxBufPtrOut;
     
     USBD_CDC_SetTxBuffer(&USBD_Device, (uint8_t*)&UserTxBuffer[buffptr], buffsize);
-    
+    printf("HAL_TIM_PeriodElapsedCallback\n");
     if(USBD_CDC_TransmitPacket(&USBD_Device) == USBD_OK)
     {
       UserTxBufPtrOut += buffsize;
@@ -282,7 +283,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
   }
   
   /* Start another reception: provide the buffer pointer with offset and the buffer size */
-  HAL_UART_Receive_IT(huart, (uint8_t *)(UserTxBuffer + UserTxBufPtrIn), 1);
+  //HAL_UART_Receive_IT(huart, (uint8_t *)(UserTxBuffer + UserTxBufPtrIn), 1);
 }
 
 /**
@@ -296,9 +297,10 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 static int8_t CDC_Itf_Receive(uint8_t* Buf, uint32_t *Len)
 {
 	int i=0;
-  HAL_UART_Transmit_DMA(&UartHandle, Buf, *Len);
+  //HAL_UART_Transmit_DMA(&UartHandle, Buf, *Len);
   for(i=0;i<*Len;i++)
   	printf("%c",Buf[i]);
+  USBD_CDC_ReceivePacket(&USBD_Device);
   return (USBD_OK);
 }
 

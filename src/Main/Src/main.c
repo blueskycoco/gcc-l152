@@ -171,6 +171,7 @@ int main(void)
   
   /* Start Device Process */
   USBD_Start(&USBD_Device);
+  #if 0
    while (1)
   {
 		HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,3103);//output 2.5v  2.5*4096/3.3
@@ -208,6 +209,7 @@ int main(void)
 	}
 	*/
   }
+   #endif
 	if((id=spi_nor_read_id())==0)
 		while(1)
 		{
@@ -240,6 +242,16 @@ int main(void)
 	
 	while(1)
 	{
+		#if 0
+		HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,3103);//output 2.5v  2.5*4096/3.3
+		if(recv_end_flag == 1)
+		{
+			rx_len=0;
+			recv_end_flag=0;
+			HAL_UART_Receive_DMA(&huart2,aRxBuffer,RXBUFFERSIZE);
+			//printf("rx_len=%d\r\n",rx_len);
+		}
+		#endif
 		memset(HID_Buffer1,0x23,256);
 		spi_nor_read(j,256,&ret,HID_Buffer1);
 		//printf("ret read ID %x\n",id);
