@@ -55,7 +55,16 @@ extern void DMA1_Channel4_IRQHandler(void);
 extern void DMA1_Channel5_IRQHandler(void);
 extern void TIM3_IRQHandler(void);
 extern void USART1_IRQHandler(void);
-
+extern void USART2_IRQHandler(void);
+extern void USART3_IRQHandler(void);
+extern void EXTI0_IRQHandler(void);
+extern void EXTI1_IRQHandler(void);
+extern void DMA1_Channel2_IRQHandler(void);
+extern void DMA1_Channel3_IRQHandler(void);
+extern void DMA1_Channel5_IRQHandler(void);
+extern void DMA1_Channel6_IRQHandler(void);
+extern void DMA1_Channel7_IRQHandler(void);
+extern void RTC_Alarm_IRQHandler(void);
 //*****************************************************************************
 //
 // The entry point for the application.
@@ -102,18 +111,18 @@ void (* const g_pfnVectors[])(void) =
   IntDefaultHandler,//RTC_WKUP_IRQHandler,
   IntDefaultHandler,//FLASH_IRQHandler,
   IntDefaultHandler,//RCC_IRQHandler,
-  IntDefaultHandler,//EXTI0_IRQHandler,
-  IntDefaultHandler,//EXTI1_IRQHandler,
+  EXTI0_IRQHandler,//EXTI0_IRQHandler,
+  EXTI1_IRQHandler,//EXTI1_IRQHandler,
   IntDefaultHandler,//EXTI2_IRQHandler,
   IntDefaultHandler,//EXTI3_IRQHandler,
   IntDefaultHandler,//EXTI4_IRQHandler,
   IntDefaultHandler,//DMA1_Channel1_IRQHandler,
-  IntDefaultHandler,//DMA1_Channel2_IRQHandler,
-  IntDefaultHandler,//DMA1_Channel3_IRQHandler,
+  DMA1_Channel2_IRQHandler,//DMA1_Channel2_IRQHandler,
+  DMA1_Channel3_IRQHandler,//DMA1_Channel3_IRQHandler,
   DMA1_Channel4_IRQHandler,//DMA1_Channel4_IRQHandler,
-  IntDefaultHandler,//DMA1_Channel5_IRQHandler,
-  IntDefaultHandler,//DMA1_Channel6_IRQHandler,
-  IntDefaultHandler,//DMA1_Channel7_IRQHandler,
+  DMA1_Channel5_IRQHandler,//DMA1_Channel5_IRQHandler,
+  DMA1_Channel6_IRQHandler,//DMA1_Channel6_IRQHandler,
+  DMA1_Channel7_IRQHandler,//DMA1_Channel7_IRQHandler,
   IntDefaultHandler,//ADC1_IRQHandler,
   IntDefaultHandler,//USB_HP_IRQHandler,
   USB_LP_IRQHandler,//USB_LP_IRQHandler,
@@ -134,10 +143,10 @@ void (* const g_pfnVectors[])(void) =
   IntDefaultHandler,//SPI1_IRQHandler,
   IntDefaultHandler,//SPI2_IRQHandler,
   USART1_IRQHandler,//USART1_IRQHandler,
-  IntDefaultHandler,//USART2_IRQHandler,
-  IntDefaultHandler,//USART3_IRQHandler,
+  USART2_IRQHandler,//USART2_IRQHandler,
+  USART3_IRQHandler,//USART3_IRQHandler,
   IntDefaultHandler,//EXTI15_10_IRQHandler,
-  IntDefaultHandler,//RTC_Alarm_IRQHandler,
+  RTC_Alarm_IRQHandler,//RTC_Alarm_IRQHandler,
   IntDefaultHandler,//USB_FS_WKUP_IRQHandler,
   IntDefaultHandler,//TIM6_IRQHandler,
   IntDefaultHandler,//TIM7_IRQHandler,

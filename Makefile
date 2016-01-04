@@ -78,7 +78,6 @@ ${COMPILER}/net.axf: ${COMPILER}/stm32l1xx_it.o
 ${COMPILER}/net.axf: ${COMPILER}/usbd_conf.o
 ${COMPILER}/net.axf: ${COMPILER}/usbd_desc.o
 ${COMPILER}/net.axf: ${COMPILER}/usbd_cdc_interface.o
-${COMPILER}/net.axf: ${COMPILER}/stm32l1xx_hal_msp.o
 ${COMPILER}/net.axf: ${COMPILER}/stm32l1xx_nucleo.o
 ${COMPILER}/net.axf: ${COMPILER}/system_stm32l1xx.o
 ${COMPILER}/net.axf: ${COMPILER}/stm32l1xx_hal.o
@@ -97,11 +96,21 @@ ${COMPILER}/net.axf: ${COMPILER}/stm32l1xx_hal_spi_ex.o
 ${COMPILER}/net.axf: ${COMPILER}/stm32l1xx_hal_flash.o
 ${COMPILER}/net.axf: ${COMPILER}/stm32l1xx_hal_tim_ex.o
 ${COMPILER}/net.axf: ${COMPILER}/stm32l1xx_hal_tim.o
+${COMPILER}/net.axf: ${COMPILER}/stm32l1xx_hal_dac.o
+${COMPILER}/net.axf: ${COMPILER}/stm32l1xx_hal_dac_ex.o
+${COMPILER}/net.axf: ${COMPILER}/stm32l1xx_hal_rtc.o
+${COMPILER}/net.axf: ${COMPILER}/stm32l1xx_hal_rtc_ex.o
 ${COMPILER}/net.axf: ${COMPILER}/usbd_cdc.o
 ${COMPILER}/net.axf: ${COMPILER}/usbd_core.o
 ${COMPILER}/net.axf: ${COMPILER}/usbd_ctlreq.o
 ${COMPILER}/net.axf: ${COMPILER}/usbd_ioreq.o
 ${COMPILER}/net.axf: ${COMPILER}/spiflash.o
+${COMPILER}/net.axf: ${COMPILER}/rtc.o
+${COMPILER}/net.axf: ${COMPILER}/dac.o
+${COMPILER}/net.axf: ${COMPILER}/spi.o
+${COMPILER}/net.axf: ${COMPILER}/dma.o
+${COMPILER}/net.axf: ${COMPILER}/usart.o
+${COMPILER}/net.axf: ${COMPILER}/gpio.o
 ${COMPILER}/net.axf: stm32l1xx_flash.ld
 SCATTERgcc_net=stm32l1xx_flash.ld
 ENTRY_net=ResetISR
