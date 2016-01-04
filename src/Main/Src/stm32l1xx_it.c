@@ -229,20 +229,20 @@ void TIMx_IRQHandler(void)
 void EXTI0_IRQHandler(void)
 {
 	/* USER CODE BEGIN EXTI0_IRQn 0 */
-	
+
 	//读取RTC时码 串口3传输数据给pc
 	//PIN PB0  PPS TI 
 	//GET RTC DATE&TIME
- 	RTC_GetDateTime(RTC_DateTime);
-  /* USER CODE END EXTI0_IRQn 0 */
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
-  /* USER CODE BEGIN EXTI0_IRQn 1 */
+	RTC_GetDateTime(RTC_DateTime);
+	/* USER CODE END EXTI0_IRQn 0 */
+	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);
+	/* USER CODE BEGIN EXTI0_IRQn 1 */
 	HAL_GPIO_WritePin(GPIOC,GPIO_PIN_0, GPIO_PIN_RESET);
 	HAL_UART_Transmit_DMA(&huart2,(uint8_t *)aTxBuffer,TXBUFFERSIZE);
 	HAL_GPIO_WritePin(GPIOC,GPIO_PIN_0, GPIO_PIN_SET);
 	//HAL_Delay(10);
 	HAL_GPIO_WritePin(GPIOC,GPIO_PIN_0, GPIO_PIN_RESET);
-	
+
 	
   /* USER CODE END EXTI0_IRQn 1 */
 }
@@ -253,20 +253,20 @@ void EXTI0_IRQHandler(void)
 void EXTI1_IRQHandler(void)
 {
 	
-  /* USER CODE BEGIN EXTI1_IRQn 0 */
-	
-  //PIN PA1 LOCK TI 
+	/* USER CODE BEGIN EXTI1_IRQn 0 */
+
+	//PIN PA1 LOCK TI 
 	//spi读取cpld数据 mcu将数据写入norflash 串口3发送数据给pc
-  /* USER CODE END EXTI1_IRQn 0 */
-	
-  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
-  /* USER CODE BEGIN EXTI1_IRQn 1 */
+	/* USER CODE END EXTI1_IRQn 0 */
+
+	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
+	/* USER CODE BEGIN EXTI1_IRQn 1 */
 	HAL_GPIO_WritePin(GPIOC,GPIO_PIN_1, GPIO_PIN_SET);
-//	HAL_Delay(10);
+	//	HAL_Delay(10);
 	HAL_GPIO_WritePin(GPIOC,GPIO_PIN_1, GPIO_PIN_RESET);
-	
+
 	HAL_UART_Transmit_DMA(&huart3,(uint8_t *)aTxBuffer,TXBUFFERSIZE);
-  /* USER CODE END EXTI1_IRQn 1 */
+	/* USER CODE END EXTI1_IRQn 1 */
 }
 
 /**

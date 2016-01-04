@@ -65,6 +65,7 @@ uint8_t RTC_DateTime[7] ={0};
 USBD_HandleTypeDef USBD_Device;
 extern uint8_t UserTxBuffer[2048];
 extern uint32_t UserTxBufPtrIn;
+extern uint32_t UserTxBufPtrOut;
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
 /* Private functions ---------------------------------------------------------*/
@@ -109,6 +110,8 @@ int main(void)
 {
 	uint8_t HID_Buffer[256],HID_Buffer1[256];
 	int id,ret,i,j=0;
+	uint32_t buffptr;
+  uint32_t buffsize;
 	/* STM32L1xx HAL library initialization:
 	- Configure the Flash prefetch
 	- Systick timer is configured by default as source of time base, but user 
@@ -138,17 +141,17 @@ int main(void)
 	HAL_UART_Init(&UartHandle);*/
 	SWO_Enable();
 	printf("in main\n");
-  MX_GPIO_Init();
-  MX_DMA_Init();
-  MX_DAC_Init();
-  MX_RTC_Init();
-  MX_SPI2_Init();
-  MX_USART1_UART_Init();
-  MX_USART2_UART_Init();
-  MX_USART3_UART_Init();
-  HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
-  __HAL_UART_ENABLE_IT(&huart2,UART_IT_IDLE);
-  HAL_GPIO_WritePin(GPIOB,GPIO_PIN_5, GPIO_PIN_SET);
+	MX_GPIO_Init();
+	MX_DMA_Init();
+	MX_DAC_Init();
+	MX_RTC_Init();
+	MX_SPI2_Init();
+	MX_USART1_UART_Init();
+	MX_USART2_UART_Init();
+	MX_USART3_UART_Init();
+	HAL_DAC_Start(&hdac, DAC_CHANNEL_1);
+	__HAL_UART_ENABLE_IT(&huart2,UART_IT_IDLE);
+	HAL_GPIO_WritePin(GPIOB,GPIO_PIN_5, GPIO_PIN_SET);
 	/* Configure Key button for remote wakeup */
 	BSP_PB_Init(BUTTON_USER, BUTTON_MODE_EXTI);
 
@@ -242,7 +245,6 @@ int main(void)
 	
 	while(1)
 	{
-		#if 0
 		HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,3103);//output 2.5v  2.5*4096/3.3
 		if(recv_end_flag == 1)
 		{
@@ -251,7 +253,6 @@ int main(void)
 			HAL_UART_Receive_DMA(&huart2,aRxBuffer,RXBUFFERSIZE);
 			//printf("rx_len=%d\r\n",rx_len);
 		}
-		#endif
 		memset(HID_Buffer1,0x23,256);
 		spi_nor_read(j,256,&ret,HID_Buffer1);
 		//printf("ret read ID %x\n",id);
@@ -279,7 +280,29 @@ int main(void)
 	  	UserTxBufPtrIn+=256;
 	  }
 		//printf("send bytes");
-     
+      if(UserTxBufPtrOut != UserTxBufPtrIn)
+	  {
+	    if(UserTxBufPtrOut > UserTxBufPtrIn) /* rollback */
+	    {
+	      buffsize = 2048 - UserTxBufPtrOut;
+	    }
+	    else 
+	    {
+	      buffsize = UserTxBufPtrIn - UserTxBufPtrOut;
+	    }
+	    
+	    buffptr = UserTxBufPtrOut;
+	    
+	    USBD_CDC_SetTxBuffer(&USBD_Device, (uint8_t*)&UserTxBuffer[buffptr], buffsize);
+	    if(USBD_CDC_TransmitPacket(&USBD_Device) == USBD_OK)
+	    {
+	      UserTxBufPtrOut += buffsize;
+	      if (UserTxBufPtrOut == 2048)
+	      {
+	        UserTxBufPtrOut = 0;
+	      }
+	    }
+	  }
 		//HAL_Delay(1000);
 	}
 	spi_nor_read(0,255,&ret,HID_Buffer1);
@@ -351,7 +374,7 @@ static void SystemClock_Config(void)
   HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1);
   
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC;
-  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSI;
+  PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
   HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit);
 
   HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);

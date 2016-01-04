@@ -134,7 +134,7 @@ void (* const g_pfnVectors[])(void) =
   IntDefaultHandler,//TIM10_IRQHandler,
   IntDefaultHandler,//TIM11_IRQHandler,
   IntDefaultHandler,//TIM2_IRQHandler,
-  TIM3_IRQHandler,//TIM3_IRQHandler,
+  IntDefaultHandler,//TIM3_IRQHandler,
   IntDefaultHandler,//TIM4_IRQHandler,
   IntDefaultHandler,//I2C1_EV_IRQHandler,
   IntDefaultHandler,//I2C1_ER_IRQHandler,
