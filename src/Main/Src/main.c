@@ -259,7 +259,7 @@ int main(void)
 		HAL_Delay(10);
 		
 		HAL_GPIO_WritePin(GPIOB,GPIO_PIN_5, GPIO_PIN_RESET);
-		printf("counter is %x %x",counter[0],counter[1]);
+		//printf("counter is %x %x\n",counter[0],counter[1]);
 		memset(HID_Buffer1,0x23,256);
 		spi_nor_read(j,256,&ret,HID_Buffer1);
 		//printf("ret read ID %x\n",id);
@@ -379,7 +379,7 @@ static void SystemClock_Config(void)
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
   HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1);
-  
+#if 0
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_RTC;
   PeriphClkInit.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
   HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit);
@@ -387,9 +387,10 @@ static void SystemClock_Config(void)
   HAL_SYSTICK_Config(HAL_RCC_GetHCLKFreq()/1000);
 
   HAL_SYSTICK_CLKSourceConfig(SYSTICK_CLKSOURCE_HCLK);
-
-  /* SysTick_IRQn interrupt configuration */
+	/* SysTick_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
+#endif
+  
 }
 void Error_Handler(void)
 {

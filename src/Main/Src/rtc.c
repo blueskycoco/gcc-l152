@@ -41,7 +41,79 @@ extern uint8_t RTC_DateTime[7];
 /* USER CODE END 0 */
 
 RTC_HandleTypeDef hrtc;
+static void RTC_AlarmConfig(void)
+{
+  RTC_DateTypeDef  sdatestructure;
+  RTC_TimeTypeDef  stimestructure;
+  RTC_AlarmTypeDef salarmstructure;
+ 
+  /*##-1- Configure the Date #################################################*/
+  /* Set Date: Tuesday February 18th 2014 */
+  sdatestructure.Year = 0x14;
+  sdatestructure.Month = RTC_MONTH_FEBRUARY;
+  sdatestructure.Date = 0x18;
+  sdatestructure.WeekDay = RTC_WEEKDAY_TUESDAY;
+  
+  if(HAL_RTC_SetDate(&hrtc,&sdatestructure,RTC_FORMAT_BCD) != HAL_OK)
+  {
+    /* Initialization Error */
+    Error_Handler(); 
+  } 
+  
+  /*##-2- Configure the Time #################################################*/
+  /* Set Time: 02:20:00 */
+  stimestructure.Hours = 0x02;
+  stimestructure.Minutes = 0x20;
+  stimestructure.Seconds = 0x00;
+  stimestructure.TimeFormat = RTC_HOURFORMAT12_AM;
+  stimestructure.DayLightSaving = RTC_DAYLIGHTSAVING_NONE ;
+  stimestructure.StoreOperation = RTC_STOREOPERATION_RESET;
+  
+  if(HAL_RTC_SetTime(&hrtc,&stimestructure,RTC_FORMAT_BCD) != HAL_OK)
+  {
+    /* Initialization Error */
+    Error_Handler(); 
+  }  
 
+  /*##-3- Configure the RTC Alarm peripheral #################################*/
+  /* Set Alarm to 02:20:30 
+     RTC Alarm Generation: Alarm on Hours, Minutes and Seconds */
+  salarmstructure.Alarm = RTC_ALARM_A;
+  salarmstructure.AlarmDateWeekDay = RTC_WEEKDAY_MONDAY;
+  salarmstructure.AlarmDateWeekDaySel = RTC_ALARMDATEWEEKDAYSEL_DATE;
+  salarmstructure.AlarmMask = RTC_ALARMMASK_DATEWEEKDAY;
+  salarmstructure.AlarmSubSecondMask = RTC_ALARMSUBSECONDMASK_NONE;
+  salarmstructure.AlarmTime.TimeFormat = RTC_HOURFORMAT12_AM;
+  salarmstructure.AlarmTime.Hours = 0x02;
+  salarmstructure.AlarmTime.Minutes = 0x20;
+  salarmstructure.AlarmTime.Seconds = 0x30;
+  salarmstructure.AlarmTime.SubSeconds = 0x56;
+  
+  if(HAL_RTC_SetAlarm_IT(&hrtc,&salarmstructure,RTC_FORMAT_BCD) != HAL_OK)
+  {
+    /* Initialization Error */
+    Error_Handler(); 
+  }
+}
+void RTC_TimeShow(uint8_t* showtime)
+{
+  RTC_DateTypeDef sdatestructureget;
+  RTC_TimeTypeDef stimestructureget;
+  
+  /* Get the RTC current Time */
+  HAL_RTC_GetTime(&hrtc, &stimestructureget, RTC_FORMAT_BIN);
+  /* Get the RTC current Date */
+  HAL_RTC_GetDate(&hrtc, &sdatestructureget, RTC_FORMAT_BIN);
+  /* Display time Format : hh:mm:ss */
+  sprintf((char*)showtime,"%02d:%02d:%02d",stimestructureget.Hours, stimestructureget.Minutes, stimestructureget.Seconds);
+} 
+void HAL_RTC_AlarmAEventCallback(RTC_HandleTypeDef *hrtc)
+{
+  /* Turn LED1 on: Alarm generation */
+  uint8_t showtime[10]={0};
+  RTC_TimeShow(showtime);
+  printf("alarm triger %s\n",showtime);
+}
 /* RTC init function */
 void MX_RTC_Init(void)
 {
@@ -74,7 +146,7 @@ void MX_RTC_Init(void)
   sDate.Year = 0x15;
 
   HAL_RTC_SetDate(&hrtc, &sDate, FORMAT_BCD);
-
+RTC_AlarmConfig();
     /**Enable the Alarm A 
     */
 /*		
@@ -97,18 +169,30 @@ void HAL_RTC_MspInit(RTC_HandleTypeDef* hrtc)
 
   if(hrtc->Instance==RTC)
   {
-  /* USER CODE BEGIN RTC_MspInit 0 */
+	  RCC_OscInitTypeDef        RCC_OscInitStruct;
+	  RCC_PeriphCLKInitTypeDef  PeriphClkInitStruct;
+	  
+	  __HAL_RCC_PWR_CLK_ENABLE();
+	  HAL_PWR_EnableBkUpAccess();
 
-  /* USER CODE END RTC_MspInit 0 */
-    /* Peripheral clock enable */
-    __HAL_RCC_RTC_ENABLE();
-
-    /* Peripheral interrupt init*/
-//    HAL_NVIC_SetPriority(RTC_Alarm_IRQn, 0, 0);
-//    HAL_NVIC_EnableIRQ(RTC_Alarm_IRQn);
-  /* USER CODE BEGIN RTC_MspInit 1 */
-
-  /* USER CODE END RTC_MspInit 1 */
+	  RCC_OscInitStruct.OscillatorType =  RCC_OSCILLATORTYPE_LSI | RCC_OSCILLATORTYPE_LSE;
+	  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
+	  RCC_OscInitStruct.LSEState = RCC_LSE_ON;
+	  RCC_OscInitStruct.LSIState = RCC_LSI_OFF;
+	  if(HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+	  { 
+	    Error_Handler();
+	  }
+	  
+	  PeriphClkInitStruct.PeriphClockSelection = RCC_PERIPHCLK_RTC;
+	  PeriphClkInitStruct.RTCClockSelection = RCC_RTCCLKSOURCE_LSE;
+	  if(HAL_RCCEx_PeriphCLKConfig(&PeriphClkInitStruct) != HAL_OK)
+	  { 
+	    Error_Handler();
+	  }
+	  __HAL_RCC_RTC_ENABLE(); 
+	  HAL_NVIC_SetPriority(RTC_Alarm_IRQn, 0x0F, 0);
+	  HAL_NVIC_EnableIRQ(RTC_Alarm_IRQn);
   }
 }
 

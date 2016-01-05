@@ -36,6 +36,7 @@
   * @brief usbd core module
   * @{
   */ 
+extern void RTC_TimeShow(uint8_t* showtime);
 extern void Error_Handler(void);
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
@@ -116,10 +117,13 @@ static int8_t CDC_Itf_Control (uint8_t cmd, uint8_t* pbuf, uint16_t length)
 static int8_t CDC_Itf_Receive(uint8_t* Buf, uint32_t *Len)
 {
 	int i=0;
+	uint8_t RTC_DateTime[10] ={0};
   //HAL_UART_Transmit_DMA(&UartHandle, Buf, *Len);
   for(i=0;i<*Len;i++)
   	printf("%c",Buf[i]);
   USBD_CDC_ReceivePacket(&USBD_Device);
+  RTC_TimeShow(RTC_DateTime);
+  printf("\nRTC==>%s\n",RTC_DateTime);
   return (USBD_OK);
 }
 
