@@ -44,7 +44,23 @@
 /* USER CODE BEGIN 1 */
 
 /* USER CODE END 1 */
+static void EXTI1_IRQHandler_Config(void)
+{
+  GPIO_InitTypeDef   GPIO_InitStructure;
 
+  /* Enable GPIOC clock */
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+
+  /* Configure PC.13 pin as input floating */
+  GPIO_InitStructure.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStructure.Pull = GPIO_PULLDOWN;
+  GPIO_InitStructure.Pin = GPIO_PIN_1;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);
+
+  /* Enable and set EXTI lines 15 to 10 Interrupt to the lowest priority */
+  HAL_NVIC_SetPriority(EXTI1_IRQn, 2, 0);
+  HAL_NVIC_EnableIRQ(EXTI1_IRQn);
+}
 /** Configure pins as 
         * Analog 
         * Input 
@@ -69,7 +85,7 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
-
+#if 0
   /*Configure GPIO pin : PA1 */
   GPIO_InitStruct.Pin = GPIO_PIN_1;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
@@ -88,7 +104,8 @@ void MX_GPIO_Init(void)
 
   HAL_NVIC_SetPriority(EXTI1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(EXTI1_IRQn);
-
+#endif
+	EXTI1_IRQHandler_Config();
 }
 
 /* USER CODE BEGIN 2 */

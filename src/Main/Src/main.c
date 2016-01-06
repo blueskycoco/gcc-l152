@@ -60,7 +60,7 @@ uint8_t rx_len = 0;
 uint8_t recv_end_flag = 0,send_end_flag = 0;
 uint8_t counter[2]={0};
 uint8_t BD_DateTime[7] ={0};
-uint8_t RTC_DateTime[7] ={0};
+uint8_t RTC_DateTime[10] ={0};
 /* Private variables ---------------------------------------------------------*/
 USBD_HandleTypeDef USBD_Device;
 extern uint8_t UserTxBuffer[2048];
@@ -253,13 +253,7 @@ int main(void)
 			HAL_UART_Receive_DMA(&huart2,aRxBuffer,RXBUFFERSIZE);
 			//printf("rx_len=%d\r\n",rx_len);
 		}
-		HAL_GPIO_WritePin(GPIOB,GPIO_PIN_5, GPIO_PIN_SET);	
 		
-		cpld_read_reg(counter,2);
-		HAL_Delay(10);
-		
-		HAL_GPIO_WritePin(GPIOB,GPIO_PIN_5, GPIO_PIN_RESET);
-		//printf("counter is %x %x\n",counter[0],counter[1]);
 		memset(HID_Buffer1,0x23,256);
 		spi_nor_read(j,256,&ret,HID_Buffer1);
 		//printf("ret read ID %x\n",id);
@@ -431,9 +425,22 @@ void HAL_USART_RxCpltCallback(UART_HandleTypeDef *UartHandle)
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-  if (GPIO_Pin == GPIO_PIN_0)
+  if (GPIO_Pin == GPIO_PIN_1)
   {
-	printf("GPC0 Int \n");
+	printf("GPA1 Int \n");
+	RTC_TimeShow(RTC_DateTime);
+	printf("RTC %s\n",RTC_DateTime);
+	HAL_GPIO_WritePin(GPIOC,GPIO_PIN_0, GPIO_PIN_RESET);
+	HAL_UART_Transmit_DMA(&huart2,(uint8_t *)aTxBuffer,TXBUFFERSIZE);
+	HAL_GPIO_WritePin(GPIOC,GPIO_PIN_0, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOC,GPIO_PIN_0, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(GPIOB,GPIO_PIN_5, GPIO_PIN_SET);	
+		
+	cpld_read_reg(counter,2);
+	//HAL_Delay(10);
+	
+	HAL_GPIO_WritePin(GPIOB,GPIO_PIN_5, GPIO_PIN_RESET);
+	printf("counter is %x %x\n",counter[0],counter[1]);
   }
 }
 

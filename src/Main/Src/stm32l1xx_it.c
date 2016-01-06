@@ -252,7 +252,7 @@ void EXTI0_IRQHandler(void)
 */
 void EXTI1_IRQHandler(void)
 {
-	
+	#if 0
 	/* USER CODE BEGIN EXTI1_IRQn 0 */
 
 	//PIN PA1 LOCK TI 
@@ -267,6 +267,9 @@ void EXTI1_IRQHandler(void)
 
 	HAL_UART_Transmit_DMA(&huart3,(uint8_t *)aTxBuffer,TXBUFFERSIZE);
 	/* USER CODE END EXTI1_IRQn 1 */
+	#else
+	HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);
+	#endif
 }
 
 /**

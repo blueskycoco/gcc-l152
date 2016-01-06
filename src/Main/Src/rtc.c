@@ -146,7 +146,7 @@ void MX_RTC_Init(void)
   sDate.Year = 0x15;
 
   HAL_RTC_SetDate(&hrtc, &sDate, FORMAT_BCD);
-RTC_AlarmConfig();
+	RTC_AlarmConfig();
     /**Enable the Alarm A 
     */
 /*		
