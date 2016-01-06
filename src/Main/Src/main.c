@@ -245,7 +245,7 @@ int main(void)
 	
 	while(1)
 	{
-		HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,3103);//output 2.5v  2.5*4096/3.3
+		//HAL_DAC_SetValue(&hdac,DAC_CHANNEL_1,DAC_ALIGN_12B_R,3103);//output 2.5v  2.5*4096/3.3
 		if(recv_end_flag == 1)
 		{
 			rx_len=0;
@@ -253,6 +253,13 @@ int main(void)
 			HAL_UART_Receive_DMA(&huart2,aRxBuffer,RXBUFFERSIZE);
 			//printf("rx_len=%d\r\n",rx_len);
 		}
+		HAL_GPIO_WritePin(GPIOB,GPIO_PIN_5, GPIO_PIN_SET);	
+		
+		cpld_read_reg(counter,2);
+		HAL_Delay(10);
+		
+		HAL_GPIO_WritePin(GPIOB,GPIO_PIN_5, GPIO_PIN_RESET);
+		printf("counter is %x %x",counter[0],counter[1]);
 		memset(HID_Buffer1,0x23,256);
 		spi_nor_read(j,256,&ret,HID_Buffer1);
 		//printf("ret read ID %x\n",id);
