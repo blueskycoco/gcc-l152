@@ -107,7 +107,7 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef *hspi)
 	
 	HAL_GPIO_WritePin(SPIx_NSS_GPIO_PORT,SPIx_NSS_PIN, GPIO_PIN_SET);
   }
-  if(hspi->Instance==SPI2)
+ // if(hspi->Instance==SPI2)
   {
   /* USER CODE BEGIN SPI2_MspInit 0 */
   /* Enable GPIO TX/RX clock */
